@@ -103,7 +103,7 @@ namespace KometaGUIv3.Forms
             var lblPlexPassword = new Label
             {
                 Text = "Password:",
-                Size = new Size(100, 20),
+                Size = new Size(70, 20),
                 Location = new Point(340, 35),
                 ForeColor = DarkTheme.TextColor
             };
@@ -189,7 +189,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "The Movie Database (TMDb) Configuration",
                 Size = new Size(700, 80),
-                Location = new Point(750, 170),
+                Location = new Point(30, 610),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -464,7 +464,20 @@ namespace KometaGUIv3.Forms
 
         private void BtnTMDbLink_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("https://www.themoviedb.org/settings/api");
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "https://www.themoviedb.org/settings/api",
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Unable to open URL: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void ClbLibraries_ItemCheck(object sender, ItemCheckEventArgs e)

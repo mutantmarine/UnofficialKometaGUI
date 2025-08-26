@@ -21,7 +21,7 @@ namespace KometaGUIv3.Forms
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1534, 961);
+            ClientSize = new System.Drawing.Size(1661, 1067);
             Name = "MainForm";
             Text = "Kometa GUI v3";
             ResumeLayout(false);
