@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:kometa.wiki)",
+      "Read(/C:\\Users\\1994c\\Downloads/**)",
+      "Read(/C:\\Users\\1994c\\Downloads/**)",
+      "Bash(dotnet build)",
+      "Bash(msbuild:*)",
+      "Bash(\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Current\\Bin\\MSBuild.exe\" KometaGUIv3.csproj)",
+      "Bash(where msbuild)",
+      "Bash(where dotnet)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dir:*)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures\\KometaGUI/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures\\KometaGUI/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures\\KometaGUI/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures\\KometaGUI/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures\\KometaGUI/**)",
+      "WebFetch(domain:plexapi.dev)",
+      "Bash(dotnet run:*)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
