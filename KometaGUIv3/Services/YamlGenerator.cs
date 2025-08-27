@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using KometaGUIv3.Models;
 using YamlDotNet.Serialization;
@@ -22,20 +23,27 @@ namespace KometaGUIv3.Services
             sb.AppendLine("plex:");
             sb.AppendLine($"  url: {profile.Plex.Url}");
             sb.AppendLine($"  token: {profile.Plex.Token}");
-            sb.AppendLine("  timeout: 60");
-            sb.AppendLine("  db_cache: 40");
-            sb.AppendLine("  clean_bundles: false");
-            sb.AppendLine("  empty_trash: false");
-            sb.AppendLine("  optimize: false");
-            sb.AppendLine("  verify_ssl: true");
+            sb.AppendLine($"  timeout: {profile.Plex.Timeout}");
+            sb.AppendLine($"  db_cache: {profile.Plex.DbCache}");
+            sb.AppendLine($"  clean_bundles: {profile.Plex.CleanBundles.ToString().ToLower()}");
+            sb.AppendLine($"  empty_trash: {profile.Plex.EmptyTrash.ToString().ToLower()}");
+            sb.AppendLine($"  optimize: {profile.Plex.Optimize.ToString().ToLower()}");
+            sb.AppendLine($"  verify_ssl: {profile.Plex.VerifySSL.ToString().ToLower()}");
             sb.AppendLine();
 
             // TMDb configuration
             sb.AppendLine("tmdb:");
             sb.AppendLine($"  apikey: {profile.TMDb.ApiKey}");
-            sb.AppendLine("  cache_expiration: 60");
-            sb.AppendLine("  language: en");
-            sb.AppendLine("  region:");
+            sb.AppendLine($"  cache_expiration: {profile.TMDb.CacheExpiration}");
+            sb.AppendLine($"  language: {profile.TMDb.Language}");
+            if (!string.IsNullOrEmpty(profile.TMDb.Region))
+            {
+                sb.AppendLine($"  region: {profile.TMDb.Region}");
+            }
+            else
+            {
+                sb.AppendLine("  region:");
+            }
             sb.AppendLine();
 
             // Libraries
@@ -48,50 +56,54 @@ namespace KometaGUIv3.Services
                     sb.AppendLine($"  {libraryName}:");
                     sb.AppendLine("    remove_overlays: false");
                     
-                    // Add collection files based on selected charts
-                    if (profile.SelectedCharts.Count > 0)
+                    // Add collection files only if there are selected charts
+                    var enabledCharts = profile.SelectedCharts.Where(c => c.Value).ToList();
+                    if (enabledCharts.Count > 0)
                     {
                         sb.AppendLine("    collection_files:");
-                        foreach (var chart in profile.SelectedCharts)
+                        foreach (var chart in enabledCharts)
                         {
-                            if (chart.Value) // If chart is selected
-                            {
-                                sb.AppendLine($"    - default: {chart.Key}");
-                            }
+                            sb.AppendLine($"    - default: {chart.Key}");
                         }
                     }
                     
-                    // Add overlay files
-                    if (profile.OverlaySettings.Count > 0)
+                    // Add overlay files only if there are enabled overlays
+                    var enabledOverlays = profile.OverlaySettings.Where(o => o.Value.IsEnabled).ToList();
+                    if (enabledOverlays.Count > 0)
                     {
                         sb.AppendLine("    overlay_files:");
-                        foreach (var overlay in profile.OverlaySettings)
+                        foreach (var overlay in enabledOverlays)
                         {
-                            if (overlay.Value.IsEnabled)
+                            // Use only the base overlay type, not the full key with media type and builder level
+                            var overlayName = overlay.Value.OverlayType;
+                            sb.AppendLine($"      - default: {overlayName}");
+                            
+                            // Only add template_variables if there are actual customizations
+                            bool hasCustomizations = overlay.Value.TemplateVariables.Count > 0;
+                            bool hasNonDefaultBuilderLevel = !string.IsNullOrEmpty(overlay.Value.BuilderLevel) && overlay.Value.BuilderLevel != "show";
+                            
+                            if (hasCustomizations || hasNonDefaultBuilderLevel)
                             {
-                                sb.AppendLine($"    - default: {overlay.Key}");
+                                sb.AppendLine("        template_variables:");
                                 
-                                if (overlay.Value.TemplateVariables.Count > 0 || !string.IsNullOrEmpty(overlay.Value.BuilderLevel))
+                                // Add template variables first
+                                foreach (var templateVar in overlay.Value.TemplateVariables)
                                 {
-                                    sb.AppendLine("      template_variables:");
-                                    
-                                    if (!string.IsNullOrEmpty(overlay.Value.BuilderLevel) && overlay.Value.BuilderLevel != "show")
-                                    {
-                                        sb.AppendLine($"        builder_level: {overlay.Value.BuilderLevel}");
-                                    }
-                                    
-                                    foreach (var templateVar in overlay.Value.TemplateVariables)
-                                    {
-                                        sb.AppendLine($"        {templateVar.Key}: {templateVar.Value}");
-                                    }
+                                    sb.AppendLine($"          {templateVar.Key}: {templateVar.Value}");
+                                }
+                                
+                                // Add builder level last if it's non-default
+                                if (hasNonDefaultBuilderLevel)
+                                {
+                                    sb.AppendLine($"          builder_level: {overlay.Value.BuilderLevel}");
                                 }
                             }
                         }
+                        
+                        // Add operations section if needed for rating overlays
+                        AddOperationsSection(sb, libraryName, enabledOverlays);
                     }
                     
-                    sb.AppendLine("    settings:");
-                    sb.AppendLine("      asset_directory:");
-                    sb.AppendLine("      - config/assets");
                     sb.AppendLine();
                 }
             }
@@ -153,129 +165,286 @@ namespace KometaGUIv3.Services
 
         private void AddOptionalServices(StringBuilder sb, KometaProfile profile)
         {
-            var serverIp = ExtractIpFromUrl(profile.Plex.Url);
+            // Only add services that are enabled
+            var servicesToCheck = new[] { "tautulli", "radarr", "sonarr", "gotify", "ntfy", "github", "omdb", "mdblist", "notifiarr", "anidb", "trakt", "mal" };
             
-            // Webhooks
-            sb.AppendLine("webhooks:");
-            sb.AppendLine("  changes:");
-            sb.AppendLine("  delete:");
-            sb.AppendLine("  error:");
-            sb.AppendLine("  run_end:");
-            sb.AppendLine("  run_start:");
-            sb.AppendLine("  version:");
+            foreach (var serviceId in servicesToCheck)
+            {
+                // Check if service is enabled
+                if (profile.EnabledServices.ContainsKey(serviceId) && profile.EnabledServices[serviceId])
+                {
+                    switch (serviceId)
+                    {
+                        case "tautulli":
+                            AddTautulliConfig(sb, profile);
+                            break;
+                        case "radarr":
+                            AddRadarrConfig(sb, profile);
+                            break;
+                        case "sonarr":
+                            AddSonarrConfig(sb, profile);
+                            break;
+                        case "gotify":
+                            AddGotifyConfig(sb, profile);
+                            break;
+                        case "ntfy":
+                            AddNtfyConfig(sb, profile);
+                            break;
+                        case "github":
+                            AddGitHubConfig(sb, profile);
+                            break;
+                        case "omdb":
+                            AddOmdbConfig(sb, profile);
+                            break;
+                        case "mdblist":
+                            AddMdbListConfig(sb, profile);
+                            break;
+                        case "notifiarr":
+                            AddNotifiarrConfig(sb, profile);
+                            break;
+                        case "anidb":
+                            AddAnidbConfig(sb, profile);
+                            break;
+                        case "trakt":
+                            AddTraktConfig(sb, profile);
+                            break;
+                        case "mal":
+                            AddMalConfig(sb, profile);
+                            break;
+                    }
+                }
+            }
+        }
+
+        private void AddOperationsSection(StringBuilder sb, string libraryName, List<KeyValuePair<string, OverlayConfiguration>> enabledOverlays)
+        {
+            var operations = new List<string>();
+            
+            // Check for rating overlays and determine operations needed
+            var ratingOverlay = enabledOverlays.FirstOrDefault(o => o.Key == "ratings");
+            if (ratingOverlay.Value != null)
+            {
+                var builderLevel = ratingOverlay.Value.BuilderLevel ?? "show";
+                
+                // Check what rating types are configured
+                bool hasRating1 = ratingOverlay.Value.TemplateVariables.ContainsKey("rating1");
+                bool hasRating2 = ratingOverlay.Value.TemplateVariables.ContainsKey("rating2");
+                bool hasRating3 = ratingOverlay.Value.TemplateVariables.ContainsKey("rating3");
+                
+                if (builderLevel == "episode")
+                {
+                    // Episode-level operations
+                    if (hasRating1 && ratingOverlay.Value.TemplateVariables["rating1"].ToString() == "critic")
+                        operations.Add("      mass_episode_critic_rating_update: imdb");
+                    if (hasRating2 && ratingOverlay.Value.TemplateVariables["rating2"].ToString() == "audience")
+                        operations.Add("      mass_episode_audience_rating_update: tmdb");
+                }
+                else if (builderLevel == "show" || string.IsNullOrEmpty(builderLevel))
+                {
+                    // Show-level operations (also applies to Movies)
+                    if (hasRating1 && ratingOverlay.Value.TemplateVariables["rating1"].ToString() == "user")
+                        operations.Add("      mass_user_rating_update: mdb_tomatoes");
+                    if (hasRating2 && ratingOverlay.Value.TemplateVariables["rating2"].ToString() == "critic")
+                        operations.Add("      mass_critic_rating_update: imdb");
+                    if (hasRating3 && ratingOverlay.Value.TemplateVariables["rating3"].ToString() == "audience")
+                        operations.Add("      mass_audience_rating_update: tmdb");
+                }
+                // Season level doesn't need operations
+            }
+            
+            // Add operations section if any operations are needed
+            if (operations.Count > 0)
+            {
+                sb.AppendLine("    operations:");
+                foreach (var operation in operations)
+                {
+                    sb.AppendLine(operation);
+                }
+            }
+        }
+
+        private void AddTautulliConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("tautulli:");
+            
+            var url = profile.OptionalServices.ContainsKey("tautulli_url") ? profile.OptionalServices["tautulli_url"] : "";
+            var apikey = profile.OptionalServices.ContainsKey("tautulli_key") ? profile.OptionalServices["tautulli_key"] : "";
+            
+            sb.AppendLine($"  url: {url}");
+            sb.AppendLine($"  apikey: {apikey}");
             sb.AppendLine();
+        }
 
-            // Optional services with default ports
-            var optionalServices = new Dictionary<string, int>
-            {
-                {"tautulli", 8181},
-                {"radarr", 7878},
-                {"sonarr", 8989},
-                {"gotify", 80},
-                {"ntfy", 80}
-            };
-
-            foreach (var service in optionalServices)
-            {
-                sb.AppendLine($"{service.Key}:");
-                sb.AppendLine($"  url: http://{serverIp}:{service.Value}");
-                
-                if (service.Key == "tautulli")
-                {
-                    sb.AppendLine("  apikey:");
-                }
-                else if (service.Key == "radarr" || service.Key == "sonarr")
-                {
-                    sb.AppendLine("  token:");
-                    sb.AppendLine("  add_missing: false");
-                    sb.AppendLine("  add_existing: false");
-                    sb.AppendLine("  upgrade_existing: false");
-                    sb.AppendLine("  monitor_existing: false");
-                    
-                    if (service.Key == "radarr")
-                    {
-                        sb.AppendLine("  root_folder_path: \"S:/Movies\"");
-                        sb.AppendLine("  monitor: true");
-                        sb.AppendLine("  availability: announced");
-                    }
-                    else
-                    {
-                        sb.AppendLine("  root_folder_path: \"S:/TV Shows\"");
-                        sb.AppendLine("  monitor: all");
-                        sb.AppendLine("  language_profile: English");
-                        sb.AppendLine("  series_type: standard");
-                        sb.AppendLine("  season_folder: true");
-                        sb.AppendLine("  cutoff_search: false");
-                    }
-                    
-                    sb.AppendLine("  quality_profile: HD-1080p");
-                    sb.AppendLine("  tag:");
-                    sb.AppendLine("  search: false");
-                    sb.AppendLine("  ignore_cache: false");
-                }
-                else
-                {
-                    sb.AppendLine("  token:");
-                }
-                
-                sb.AppendLine();
-            }
-
-            // API-based services
-            var apiServices = new List<string> { "github", "omdb", "mdblist", "notifiarr", "anidb", "trakt", "mal" };
+        private void AddRadarrConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("radarr:");
             
-            foreach (var service in apiServices)
-            {
-                sb.AppendLine($"{service}:");
-                
-                switch (service)
-                {
-                    case "github":
-                        sb.AppendLine("  token:");
-                        break;
-                    case "omdb":
-                    case "mdblist":
-                        sb.AppendLine("  apikey:");
-                        sb.AppendLine("  cache_expiration: 60");
-                        break;
-                    case "notifiarr":
-                        sb.AppendLine("  apikey:");
-                        break;
-                    case "anidb":
-                        sb.AppendLine("  username:");
-                        sb.AppendLine("  password:");
-                        sb.AppendLine("  cache_expiration: 60");
-                        sb.AppendLine("  client:");
-                        sb.AppendLine("  language: en");
-                        sb.AppendLine("  version: 1");
-                        break;
-                    case "trakt":
-                        sb.AppendLine("  client_id:");
-                        sb.AppendLine("  client_secret:");
-                        sb.AppendLine("  pin:");
-                        sb.AppendLine("  authorization:");
-                        sb.AppendLine("    access_token:");
-                        sb.AppendLine("    created_at:");
-                        sb.AppendLine("    expires_in:");
-                        sb.AppendLine("    refresh_token:");
-                        sb.AppendLine("    scope: public");
-                        sb.AppendLine("    token_type:");
-                        break;
-                    case "mal":
-                        sb.AppendLine("  client_id:");
-                        sb.AppendLine("  client_secret:");
-                        sb.AppendLine("  cache_expiration: 60");
-                        sb.AppendLine("  localhost_url:");
-                        sb.AppendLine("  authorization:");
-                        sb.AppendLine("    access_token:");
-                        sb.AppendLine("    expires_in:");
-                        sb.AppendLine("    refresh_token:");
-                        sb.AppendLine("    token_type:");
-                        break;
-                }
-                
-                sb.AppendLine();
-            }
+            var url = profile.OptionalServices.ContainsKey("radarr_url") ? profile.OptionalServices["radarr_url"] : "";
+            var token = profile.OptionalServices.ContainsKey("radarr_key") ? profile.OptionalServices["radarr_key"] : "";
+            
+            sb.AppendLine($"  url: {url}");
+            sb.AppendLine($"  token: {token}");
+            sb.AppendLine("  add_missing: false");
+            sb.AppendLine("  add_existing: false");
+            sb.AppendLine("  upgrade_existing: false");
+            sb.AppendLine("  monitor_existing: false");
+            sb.AppendLine("  root_folder_path: \"S:/Movies\"");
+            sb.AppendLine("  monitor: true");
+            sb.AppendLine("  availability: announced");
+            sb.AppendLine("  quality_profile: HD-1080p");
+            sb.AppendLine("  tag:");
+            sb.AppendLine("  search: false");
+            sb.AppendLine("  radarr_path:");
+            sb.AppendLine("  plex_path:");
+            sb.AppendLine("  ignore_cache: false");
+            sb.AppendLine();
+        }
+
+        private void AddSonarrConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("sonarr:");
+            
+            var url = profile.OptionalServices.ContainsKey("sonarr_url") ? profile.OptionalServices["sonarr_url"] : "";
+            var token = profile.OptionalServices.ContainsKey("sonarr_key") ? profile.OptionalServices["sonarr_key"] : "";
+            
+            sb.AppendLine($"  url: {url}");
+            sb.AppendLine($"  token: {token}");
+            sb.AppendLine("  add_missing: false");
+            sb.AppendLine("  add_existing: false");
+            sb.AppendLine("  upgrade_existing: false");
+            sb.AppendLine("  monitor_existing: false");
+            sb.AppendLine("  root_folder_path: \"S:/TV Shows\"");
+            sb.AppendLine("  monitor: all");
+            sb.AppendLine("  quality_profile: HD-1080p");
+            sb.AppendLine("  language_profile: English");
+            sb.AppendLine("  series_type: standard");
+            sb.AppendLine("  season_folder: true");
+            sb.AppendLine("  tag:");
+            sb.AppendLine("  search: false");
+            sb.AppendLine("  cutoff_search: false");
+            sb.AppendLine("  sonarr_path:");
+            sb.AppendLine("  plex_path:");
+            sb.AppendLine("  ignore_cache: false");
+            sb.AppendLine();
+        }
+
+        private void AddGotifyConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("gotify:");
+            
+            var url = profile.OptionalServices.ContainsKey("gotify_url") ? profile.OptionalServices["gotify_url"] : "";
+            var token = profile.OptionalServices.ContainsKey("gotify_key") ? profile.OptionalServices["gotify_key"] : "";
+            
+            sb.AppendLine($"  url: {url}");
+            sb.AppendLine($"  token: {token}");
+            sb.AppendLine();
+        }
+
+        private void AddNtfyConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("ntfy:");
+            
+            var url = profile.OptionalServices.ContainsKey("ntfy_url") ? profile.OptionalServices["ntfy_url"] : "";
+            var token = profile.OptionalServices.ContainsKey("ntfy_key") ? profile.OptionalServices["ntfy_key"] : "";
+            
+            sb.AppendLine($"  url: {url}");
+            sb.AppendLine($"  token: {token}");
+            sb.AppendLine("  topic:");
+            sb.AppendLine();
+        }
+
+        private void AddGitHubConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("github:");
+            
+            var token = profile.OptionalServices.ContainsKey("github_key") ? profile.OptionalServices["github_key"] : "";
+            
+            sb.AppendLine($"  token: {token}");
+            sb.AppendLine();
+        }
+
+        private void AddOmdbConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("omdb:");
+            
+            var apikey = profile.OptionalServices.ContainsKey("omdb_key") ? profile.OptionalServices["omdb_key"] : "";
+            
+            sb.AppendLine($"  apikey: {apikey}");
+            sb.AppendLine("  cache_expiration: 60");
+            sb.AppendLine();
+        }
+
+        private void AddMdbListConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("mdblist:");
+            
+            var apikey = profile.OptionalServices.ContainsKey("mdblist_key") ? profile.OptionalServices["mdblist_key"] : "";
+            
+            sb.AppendLine($"  apikey: {apikey}");
+            sb.AppendLine("  cache_expiration: 60");
+            sb.AppendLine();
+        }
+
+        private void AddNotifiarrConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("notifiarr:");
+            
+            var apikey = profile.OptionalServices.ContainsKey("notifiarr_key") ? profile.OptionalServices["notifiarr_key"] : "";
+            
+            sb.AppendLine($"  apikey: {apikey}");
+            sb.AppendLine();
+        }
+
+        private void AddAnidbConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("anidb:");
+            
+            var credentials = profile.OptionalServices.ContainsKey("anidb_key") ? profile.OptionalServices["anidb_key"] : "";
+            
+            sb.AppendLine($"  username: {credentials}");
+            sb.AppendLine("  password:");
+            sb.AppendLine("  cache_expiration: 60");
+            sb.AppendLine("  client:");
+            sb.AppendLine("  language: en");
+            sb.AppendLine("  version: 1");
+            sb.AppendLine();
+        }
+
+        private void AddTraktConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("trakt:");
+            
+            var credentials = profile.OptionalServices.ContainsKey("trakt_key") ? profile.OptionalServices["trakt_key"] : "";
+            
+            sb.AppendLine($"  client_id: {credentials}");
+            sb.AppendLine("  client_secret:");
+            sb.AppendLine("  pin:");
+            sb.AppendLine("  authorization:");
+            sb.AppendLine("    access_token:");
+            sb.AppendLine("    created_at:");
+            sb.AppendLine("    expires_in:");
+            sb.AppendLine("    refresh_token:");
+            sb.AppendLine("    scope: public");
+            sb.AppendLine("    token_type:");
+            sb.AppendLine();
+        }
+
+        private void AddMalConfig(StringBuilder sb, KometaProfile profile)
+        {
+            sb.AppendLine("mal:");
+            
+            var credentials = profile.OptionalServices.ContainsKey("mal_key") ? profile.OptionalServices["mal_key"] : "";
+            
+            sb.AppendLine($"  client_id: {credentials}");
+            sb.AppendLine("  client_secret:");
+            sb.AppendLine("  cache_expiration: 60");
+            sb.AppendLine("  localhost_url:");
+            sb.AppendLine("  authorization:");
+            sb.AppendLine("    access_token:");
+            sb.AppendLine("    expires_in:");
+            sb.AppendLine("    refresh_token:");
+            sb.AppendLine("    token_type:");
+            sb.AppendLine();
         }
 
         public void SaveConfigToFile(string yamlContent, string filePath)

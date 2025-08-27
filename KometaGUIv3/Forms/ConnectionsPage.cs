@@ -24,6 +24,12 @@ namespace KometaGUIv3.Forms
         private Button btnSelectAll, btnUnselectAll;
         private Label lblValidationStatus;
         private GroupBox grpKometaDirectory, grpPlexSetup, grpLibrarySelection, grpTMDbSetup;
+        
+        // Advanced configuration controls
+        private NumericUpDown nudTimeout, nudDbCache, nudCacheExpiration;
+        private CheckBox cbCleanBundles, cbEmptyTrash, cbOptimize, cbVerifySSL;
+        private TextBox txtLanguage, txtRegion;
+        private ComboBox cmbLanguage;
 
         public event EventHandler ValidationChanged;
         public bool IsPageValid => isValidated;
@@ -81,7 +87,7 @@ namespace KometaGUIv3.Forms
             grpPlexSetup = new GroupBox
             {
                 Text = "Plex Server Configuration",
-                Size = new Size(700, 200),
+                Size = new Size(700, 320),
                 Location = new Point(30, 170),
                 ForeColor = DarkTheme.TextColor
             };
@@ -145,9 +151,88 @@ namespace KometaGUIv3.Forms
                 ForeColor = Color.Orange
             };
 
+            // Advanced Plex Settings
+            var lblAdvancedPlex = new Label
+            {
+                Text = "Advanced Settings:",
+                Size = new Size(120, 20),
+                Location = new Point(15, 185),
+                ForeColor = DarkTheme.AccentColor,
+                Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 9F, FontStyle.Bold)
+            };
+
+            var lblTimeout = new Label
+            {
+                Text = "Timeout (sec):",
+                Size = new Size(80, 20),
+                Location = new Point(15, 215),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            nudTimeout = new NumericUpDown
+            {
+                Size = new Size(60, 25),
+                Location = new Point(100, 212),
+                Minimum = 10,
+                Maximum = 300,
+                Value = 60
+            };
+
+            var lblDbCache = new Label
+            {
+                Text = "DB Cache:",
+                Size = new Size(60, 20),
+                Location = new Point(180, 215),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            nudDbCache = new NumericUpDown
+            {
+                Size = new Size(60, 25),
+                Location = new Point(245, 212),
+                Minimum = 10,
+                Maximum = 200,
+                Value = 40
+            };
+
+            cbVerifySSL = new CheckBox
+            {
+                Text = "Verify SSL",
+                Size = new Size(80, 20),
+                Location = new Point(320, 215),
+                Checked = true,
+                ForeColor = DarkTheme.TextColor
+            };
+
+            cbCleanBundles = new CheckBox
+            {
+                Text = "Clean Bundles",
+                Size = new Size(100, 20),
+                Location = new Point(15, 250),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            cbEmptyTrash = new CheckBox
+            {
+                Text = "Empty Trash",
+                Size = new Size(90, 20),
+                Location = new Point(125, 250),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            cbOptimize = new CheckBox
+            {
+                Text = "Optimize DB",
+                Size = new Size(90, 20),
+                Location = new Point(225, 250),
+                ForeColor = DarkTheme.TextColor
+            };
+
             grpPlexSetup.Controls.AddRange(new Control[] {
                 lblPlexEmail, txtPlexEmail, lblPlexPassword, txtPlexPassword,
-                btnAuthenticatePlex, lblPlexUrl, txtPlexUrl, lblValidationStatus
+                btnAuthenticatePlex, lblPlexUrl, txtPlexUrl, lblValidationStatus,
+                lblAdvancedPlex, lblTimeout, nudTimeout, lblDbCache, nudDbCache,
+                cbVerifySSL, cbCleanBundles, cbEmptyTrash, cbOptimize
             });
 
             // Library Selection Group
@@ -155,7 +240,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Plex Library Selection",
                 Size = new Size(700, 200),
-                Location = new Point(30, 390),
+                Location = new Point(30, 510),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -188,8 +273,8 @@ namespace KometaGUIv3.Forms
             grpTMDbSetup = new GroupBox
             {
                 Text = "The Movie Database (TMDb) Configuration",
-                Size = new Size(700, 80),
-                Location = new Point(30, 610),
+                Size = new Size(700, 140),
+                Location = new Point(30, 730),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -215,7 +300,70 @@ namespace KometaGUIv3.Forms
                 Location = new Point(410, 29)
             };
 
-            grpTMDbSetup.Controls.AddRange(new Control[] { lblTMDbApiKey, txtTMDbApiKey, btnTMDbLink });
+            // Advanced TMDb Settings
+            var lblAdvancedTMDb = new Label
+            {
+                Text = "Advanced Settings:",
+                Size = new Size(120, 20),
+                Location = new Point(15, 70),
+                ForeColor = DarkTheme.AccentColor,
+                Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 9F, FontStyle.Bold)
+            };
+
+            var lblCacheExpiration = new Label
+            {
+                Text = "Cache (days):",
+                Size = new Size(80, 20),
+                Location = new Point(15, 100),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            nudCacheExpiration = new NumericUpDown
+            {
+                Size = new Size(60, 25),
+                Location = new Point(100, 97),
+                Minimum = 1,
+                Maximum = 365,
+                Value = 60
+            };
+
+            var lblLanguage = new Label
+            {
+                Text = "Language:",
+                Size = new Size(60, 20),
+                Location = new Point(180, 100),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            cmbLanguage = new ComboBox
+            {
+                Size = new Size(60, 25),
+                Location = new Point(245, 97),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbLanguage.Items.AddRange(new[] { "en", "es", "fr", "de", "it", "pt", "ja", "ko", "zh", "ru" });
+            cmbLanguage.SelectedItem = "en";
+
+            var lblRegion = new Label
+            {
+                Text = "Region:",
+                Size = new Size(50, 20),
+                Location = new Point(320, 100),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            txtRegion = new TextBox
+            {
+                Size = new Size(60, 25),
+                Location = new Point(375, 97),
+                PlaceholderText = "US, GB, etc."
+            };
+
+            grpTMDbSetup.Controls.AddRange(new Control[] { 
+                lblTMDbApiKey, txtTMDbApiKey, btnTMDbLink,
+                lblAdvancedTMDb, lblCacheExpiration, nudCacheExpiration,
+                lblLanguage, cmbLanguage, lblRegion, txtRegion 
+            });
 
             // Add all groups to the page
             this.Controls.AddRange(new Control[] {
@@ -375,7 +523,7 @@ namespace KometaGUIv3.Forms
         {
             try
             {
-                // Get libraries from server
+                // Get fresh libraries from server
                 var libraries = await plexService.GetLibraries(profile.Plex.Url, profile.Plex.Token);
                 
                 clbLibraries.Items.Clear();
@@ -399,6 +547,9 @@ namespace KometaGUIv3.Forms
                     }
                     UpdateSelectedLibraries();
                 }
+                
+                // Update profile's last modified time to indicate fresh library data
+                profile.LastModified = DateTime.Now;
             }
             catch (Exception ex)
             {
@@ -483,11 +634,27 @@ namespace KometaGUIv3.Forms
         private void ClbLibraries_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             // Use BeginInvoke to ensure the check state is updated before processing
-            this.BeginInvoke(new MethodInvoker(() =>
+            if (this.IsHandleCreated)
             {
-                UpdateSelectedLibraries();
-                ValidatePageInputs(null, null);
-            }));
+                this.BeginInvoke(new MethodInvoker(() =>
+                {
+                    UpdateSelectedLibraries();
+                    ValidatePageInputs(null, null);
+                }));
+            }
+            else
+            {
+                // Handle not created yet, use a timer to defer the call
+                var timer = new System.Windows.Forms.Timer { Interval = 10 };
+                timer.Tick += (s, args) =>
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                    UpdateSelectedLibraries();
+                    ValidatePageInputs(null, null);
+                };
+                timer.Start();
+            }
         }
 
         private void UpdateSelectedLibraries()
@@ -531,12 +698,64 @@ namespace KometaGUIv3.Forms
                 txtPlexUrl.Text = profile.Plex.Url ?? "http://192.168.1.12:32400";
                 txtTMDbApiKey.Text = profile.TMDb.ApiKey ?? "";
                 
+                // Load advanced Plex settings
+                nudTimeout.Value = profile.Plex.Timeout;
+                nudDbCache.Value = profile.Plex.DbCache;
+                cbCleanBundles.Checked = profile.Plex.CleanBundles;
+                cbEmptyTrash.Checked = profile.Plex.EmptyTrash;
+                cbOptimize.Checked = profile.Plex.Optimize;
+                cbVerifySSL.Checked = profile.Plex.VerifySSL;
+                
+                // Load advanced TMDb settings
+                nudCacheExpiration.Value = profile.TMDb.CacheExpiration;
+                cmbLanguage.SelectedItem = profile.TMDb.Language;
+                txtRegion.Text = profile.TMDb.Region ?? "";
+                
+                // Load cached libraries if available
+                if (profile.Plex.AvailableLibraries.Count > 0)
+                {
+                    LoadCachedLibraries();
+                }
+                
                 if (profile.Plex.IsAuthenticated)
                 {
-                    lblValidationStatus.Text = "Status: Previously authenticated - Ready to reconnect";
-                    lblValidationStatus.ForeColor = Color.Yellow;
+                    if (profile.Plex.AvailableLibraries.Count > 0)
+                    {
+                        lblValidationStatus.Text = "Status: Previously authenticated with cached libraries";
+                        lblValidationStatus.ForeColor = Color.LightGreen;
+                    }
+                    else
+                    {
+                        lblValidationStatus.Text = "Status: Previously authenticated - Ready to reconnect";
+                        lblValidationStatus.ForeColor = Color.Yellow;
+                    }
                 }
             }
+        }
+
+        private void LoadCachedLibraries()
+        {
+            clbLibraries.Items.Clear();
+            
+            foreach (var library in profile.Plex.AvailableLibraries)
+            {
+                clbLibraries.Items.Add($"{library.Name} ({library.Type})", library.IsSelected);
+            }
+
+            btnSelectAll.Enabled = clbLibraries.Items.Count > 0;
+            btnUnselectAll.Enabled = clbLibraries.Items.Count > 0;
+
+            // Load selected libraries from profile
+            if (profile.SelectedLibraries.Count > 0)
+            {
+                for (int i = 0; i < clbLibraries.Items.Count; i++)
+                {
+                    var library = profile.Plex.AvailableLibraries[i];
+                    clbLibraries.SetItemChecked(i, library.IsSelected);
+                }
+            }
+            
+            ValidatePageInputs(null, null);
         }
 
         public void SaveProfileData()
@@ -548,6 +767,20 @@ namespace KometaGUIv3.Forms
                 profile.Plex.Url = txtPlexUrl.Text;
                 profile.TMDb.ApiKey = txtTMDbApiKey.Text;
                 profile.TMDb.IsAuthenticated = !string.IsNullOrWhiteSpace(txtTMDbApiKey.Text);
+                
+                // Save advanced Plex settings
+                profile.Plex.Timeout = (int)nudTimeout.Value;
+                profile.Plex.DbCache = (int)nudDbCache.Value;
+                profile.Plex.CleanBundles = cbCleanBundles.Checked;
+                profile.Plex.EmptyTrash = cbEmptyTrash.Checked;
+                profile.Plex.Optimize = cbOptimize.Checked;
+                profile.Plex.VerifySSL = cbVerifySSL.Checked;
+                
+                // Save advanced TMDb settings
+                profile.TMDb.CacheExpiration = (int)nudCacheExpiration.Value;
+                profile.TMDb.Language = cmbLanguage.SelectedItem?.ToString() ?? "en";
+                profile.TMDb.Region = txtRegion.Text;
+                
                 UpdateSelectedLibraries();
             }
         }

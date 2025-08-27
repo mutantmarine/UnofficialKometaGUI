@@ -22,6 +22,8 @@
       "WebFetch(domain:plexapi.dev)",
       "Bash(dotnet run:*)",
       "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
       "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)"
     ],
     "deny": [],

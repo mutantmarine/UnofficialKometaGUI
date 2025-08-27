@@ -14,6 +14,7 @@ namespace KometaGUIv3.Models
         public Dictionary<string, bool> SelectedCharts { get; set; }
         public Dictionary<string, OverlayConfiguration> OverlaySettings { get; set; }
         public Dictionary<string, string> OptionalServices { get; set; }
+        public Dictionary<string, bool> EnabledServices { get; set; }
         public KometaSettings Settings { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastModified { get; set; }
@@ -28,6 +29,7 @@ namespace KometaGUIv3.Models
             SelectedCharts = new Dictionary<string, bool>();
             OverlaySettings = new Dictionary<string, OverlayConfiguration>();
             OptionalServices = new Dictionary<string, string>();
+            EnabledServices = new Dictionary<string, bool>();
             Settings = new KometaSettings();
             CreatedDate = DateTime.Now;
             LastModified = DateTime.Now;
@@ -41,6 +43,14 @@ namespace KometaGUIv3.Models
         public string Email { get; set; }
         public bool IsAuthenticated { get; set; }
         public List<PlexLibrary> AvailableLibraries { get; set; }
+        
+        // Advanced Plex Settings
+        public int Timeout { get; set; }
+        public int DbCache { get; set; }
+        public bool CleanBundles { get; set; }
+        public bool EmptyTrash { get; set; }
+        public bool Optimize { get; set; }
+        public bool VerifySSL { get; set; }
 
         public PlexConfiguration()
         {
@@ -49,6 +59,14 @@ namespace KometaGUIv3.Models
             Email = string.Empty;
             IsAuthenticated = false;
             AvailableLibraries = new List<PlexLibrary>();
+            
+            // Set defaults
+            Timeout = 60;
+            DbCache = 40;
+            CleanBundles = false;
+            EmptyTrash = false;
+            Optimize = false;
+            VerifySSL = true;
         }
     }
 
@@ -157,11 +175,21 @@ namespace KometaGUIv3.Models
     {
         public string ApiKey { get; set; }
         public bool IsAuthenticated { get; set; }
+        
+        // Advanced TMDb Settings
+        public int CacheExpiration { get; set; }
+        public string Language { get; set; }
+        public string Region { get; set; }
 
         public TMDbConfiguration()
         {
             ApiKey = string.Empty;
             IsAuthenticated = false;
+            
+            // Set defaults
+            CacheExpiration = 60;
+            Language = "en";
+            Region = string.Empty;
         }
     }
 

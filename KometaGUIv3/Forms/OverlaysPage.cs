@@ -107,7 +107,7 @@ namespace KometaGUIv3.Forms
             grpOverlays = new GroupBox
             {
                 Text = "Available Overlays",
-                Size = new Size(580, 500),
+                Size = new Size(580, 650),
                 Location = new Point(30, 180),
                 ForeColor = DarkTheme.TextColor,
                 Font = DarkTheme.GetHeaderFont()
@@ -115,9 +115,9 @@ namespace KometaGUIv3.Forms
 
             var overlayPanel = new Panel
             {
-                Size = new Size(560, 460),
+                Size = new Size(560, 610),
                 Location = new Point(10, 30),
-                AutoScroll = true,
+                AutoScroll = false,
                 BackColor = DarkTheme.BackgroundColor
             };
 
@@ -129,7 +129,7 @@ namespace KometaGUIv3.Forms
 
             this.Controls.AddRange(new Control[] {
                 titleLabel, descriptionLabel, lblMediaType, cmbMediaType,
-                lblBuilderLevel, cmbBuilderLevel, imagePreviewPanel, grpOverlays, grpRatingConfig
+                lblBuilderLevel, cmbBuilderLevel, grpOverlays, grpRatingConfig
             });
 
             DarkTheme.ApplyDarkTheme(this);
@@ -138,29 +138,21 @@ namespace KometaGUIv3.Forms
 
         private void SetupImagePreview()
         {
-            imagePreviewPanel = new Panel
-            {
-                Size = new Size(550, 750),
-                Location = new Point(630, 180),
-                BorderStyle = BorderStyle.FixedSingle,
-                BackColor = DarkTheme.PanelColor
-            };
-
             var previewTitle = new Label
             {
                 Text = "Overlay Preview",
                 Font = DarkTheme.GetHeaderFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(200, 25),
-                Location = new Point(10, 10),
+                Location = new Point(630, 180),
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            // For Movies: Two images stacked vertically - made much larger
+            // For Movies: Two images stacked vertically - made much larger without container constraints
             picPreview1 = new PictureBox
             {
-                Size = new Size(520, 350),
-                Location = new Point(15, 45),
+                Size = new Size(600, 365),
+                Location = new Point(630, 210),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
                 BorderStyle = BorderStyle.FixedSingle
@@ -168,14 +160,15 @@ namespace KometaGUIv3.Forms
 
             picPreview2 = new PictureBox
             {
-                Size = new Size(520, 350),
-                Location = new Point(15, 410),
+                Size = new Size(600, 365),
+                Location = new Point(630, 585),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            imagePreviewPanel.Controls.AddRange(new Control[] { previewTitle, picPreview1, picPreview2 });
+            // Add controls directly to the main form instead of a container panel
+            this.Controls.AddRange(new Control[] { previewTitle, picPreview1, picPreview2 });
             
             // Load initial images
             LoadPreviewImages();
@@ -231,11 +224,11 @@ namespace KometaGUIv3.Forms
                 if (currentMediaType == "Movies")
                 {
                     // Show both movie images stacked - use much larger sizes
-                    picPreview1.Size = new Size(520, 350);
-                    picPreview1.Location = new Point(15, 45);
+                    picPreview1.Size = new Size(600, 365);
+                    picPreview1.Location = new Point(630, 210);
                     picPreview2.Visible = true;
-                    picPreview2.Size = new Size(520, 350);
-                    picPreview2.Location = new Point(15, 410);
+                    picPreview2.Size = new Size(600, 365);
+                    picPreview2.Location = new Point(630, 585);
                     
                     LoadWebPImage(picPreview1, "movie_overlay_preview_1.webp");
                     LoadWebPImage(picPreview2, "movie_overlay_preview_2.webp");
@@ -243,8 +236,8 @@ namespace KometaGUIv3.Forms
                 else // TV Shows
                 {
                     // Show single image based on builder level, make it much larger
-                    picPreview1.Size = new Size(520, 680);
-                    picPreview1.Location = new Point(15, 45); // Use full height for single image
+                    picPreview1.Size = new Size(600, 740);
+                    picPreview1.Location = new Point(630, 210); // Use full height for single image
                     picPreview2.Visible = false;
                     
                     string imageName = $"tvshows_{currentBuilderLevel}_overlay_preview.webp";
@@ -333,7 +326,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Rating Configuration",
                 Size = new Size(350, 200),
-                Location = new Point(630, 490),
+                Location = new Point(630, 640),
                 ForeColor = DarkTheme.TextColor,
                 Font = DarkTheme.GetHeaderFont()
             };

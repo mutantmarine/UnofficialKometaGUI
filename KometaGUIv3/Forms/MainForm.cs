@@ -40,9 +40,12 @@ namespace KometaGUIv3.Forms
         private void SetupForm()
         {
             this.Text = "Kometa GUI v3";
-            this.Size = new Size(1400, 900); // Increased window size
+            this.Size = new Size(1500, 1000); // Optimal size for all content
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.MinimumSize = new Size(1200, 700); // Increased minimum size
+            this.MinimumSize = new Size(1500, 1000); // Lock to optimal size
+            this.MaximumSize = new Size(1500, 1000); // Prevent resizing beyond optimal
+            this.FormBorderStyle = FormBorderStyle.FixedSingle; // Disable resize handle
+            this.MaximizeBox = false; // Disable maximize button
             
             // Apply dark theme
             DarkTheme.ApplyDarkTheme(this);

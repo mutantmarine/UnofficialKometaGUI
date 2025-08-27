@@ -273,16 +273,33 @@ namespace KometaGUIv3.Forms
         {
             try
             {
+                // Validate that Kometa directory is set
+                if (string.IsNullOrWhiteSpace(profile.KometaDirectory))
+                {
+                    MessageBox.Show("Please set a Kometa directory in the Connections page before generating the config.", 
+                        "Kometa Directory Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 // Save current profile data
                 profileManager.SaveProfile(profile);
 
                 var yamlContent = yamlGenerator.GenerateKometaConfig(profile);
                 
+                // Create the config file path (Kometa directory + config subfolder)
+                var configDirectory = Path.Combine(profile.KometaDirectory, "config");
+                var defaultConfigPath = Path.Combine(configDirectory, "config.yml");
+                
+                // Ensure the config directory exists
+                Directory.CreateDirectory(configDirectory);
+                
                 using (var saveDialog = new SaveFileDialog())
                 {
                     saveDialog.Filter = "YAML files (*.yml)|*.yml|All files (*.*)|*.*";
-                    saveDialog.FileName = $"config_{profile.Name}.yml";
+                    saveDialog.FileName = "config.yml";
                     saveDialog.DefaultExt = "yml";
+                    saveDialog.InitialDirectory = configDirectory;
+                    saveDialog.Title = "Save Kometa Configuration";
 
                     if (saveDialog.ShowDialog() == DialogResult.OK)
                     {
@@ -306,18 +323,35 @@ namespace KometaGUIv3.Forms
         {
             try
             {
-                // First generate a temporary config file
+                // Validate that Kometa directory is set
+                if (string.IsNullOrWhiteSpace(profile.KometaDirectory))
+                {
+                    MessageBox.Show("Please set a Kometa directory in the Connections page before running Kometa.", 
+                        "Kometa Directory Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Generate and save the config file to the designated Kometa directory
                 profileManager.SaveProfile(profile);
                 var yamlContent = yamlGenerator.GenerateKometaConfig(profile);
-                var tempConfigPath = Path.Combine(Path.GetTempPath(), $"kometa_temp_{profile.Name}.yml");
-                yamlGenerator.SaveConfigToFile(yamlContent, tempConfigPath);
+                
+                // Create the config file path (Kometa directory + config subfolder)
+                var configDirectory = Path.Combine(profile.KometaDirectory, "config");
+                var configPath = Path.Combine(configDirectory, "config.yml");
+                
+                // Ensure the config directory exists
+                Directory.CreateDirectory(configDirectory);
+                
+                // Save the config file
+                yamlGenerator.SaveConfigToFile(yamlContent, configPath);
+                LogMessage($"Configuration generated and saved to: {configPath}");
 
                 LogMessage("Starting Kometa execution...");
                 btnRunKometa.Enabled = false;
                 btnStopKometa.Enabled = true;
                 progressBar.Visible = true;
 
-                var success = await kometaRunner.RunKometaAsync(profile, tempConfigPath);
+                var success = await kometaRunner.RunKometaAsync(profile, configPath);
 
                 if (success)
                 {

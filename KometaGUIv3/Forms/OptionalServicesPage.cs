@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using KometaGUIv3.Models;
 using KometaGUIv3.Utils;
@@ -11,6 +12,7 @@ namespace KometaGUIv3.Forms
     {
         private KometaProfile profile;
         private Dictionary<string, TextBox> serviceInputs;
+        private Dictionary<string, CheckBox> serviceCheckboxes;
         private string plexServerIp;
 
         // Service configurations
@@ -38,6 +40,7 @@ namespace KometaGUIv3.Forms
         {
             this.profile = profile;
             this.serviceInputs = new Dictionary<string, TextBox>();
+            this.serviceCheckboxes = new Dictionary<string, CheckBox>();
             this.plexServerIp = ExtractIpFromUrl(profile?.Plex?.Url ?? "http://192.168.1.12:32400");
             
             InitializeComponent();
@@ -134,69 +137,84 @@ namespace KometaGUIv3.Forms
 
         private int CreateServiceRow(Panel parent, string serviceId, ServiceConfig config, int y)
         {
-            // Service name label
+            // Enable checkbox (disabled by default)
+            var enableCheckbox = new CheckBox
+            {
+                Size = new Size(15, 15),
+                Location = new Point(15, y + 2),
+                Name = $"{serviceId}_enabled",
+                Checked = false // Default to disabled
+            };
+            enableCheckbox.CheckedChanged += (s, e) => UpdateServiceControlsState(serviceId, enableCheckbox.Checked);
+            serviceCheckboxes[serviceId] = enableCheckbox;
+
+            // Service name label (moved right to accommodate checkbox)
             var nameLabel = new Label
             {
                 Text = config.Name,
                 Font = DarkTheme.GetDefaultFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(120, 20),
-                Location = new Point(15, y)
+                Location = new Point(40, y)
             };
 
-            // Service description
+            // Service description (moved right to accommodate checkbox)
             var descLabel = new Label
             {
                 Text = config.Description,
                 Font = new Font("Segoe UI", 8F),
                 ForeColor = Color.Gray,
                 Size = new Size(300, 30),
-                Location = new Point(15, y + 20)
+                Location = new Point(40, y + 20)
             };
 
-            // URL field (for local services)
+            // URL field (for local services) - shifted right
             if (config.IsLocal)
             {
                 var urlLabel = new Label
                 {
                     Text = "URL:",
                     Size = new Size(35, 20),
-                    Location = new Point(150, y),
-                    ForeColor = DarkTheme.TextColor
+                    Location = new Point(175, y),
+                    ForeColor = DarkTheme.TextColor,
+                    Name = $"{serviceId}_url_label"
                 };
 
                 var urlTextBox = new TextBox
                 {
                     Text = $"http://{plexServerIp}:{config.DefaultPort}",
                     Size = new Size(200, 25),
-                    Location = new Point(190, y - 2),
-                    Name = $"{serviceId}_url"
+                    Location = new Point(215, y - 2),
+                    Name = $"{serviceId}_url",
+                    Enabled = false // Start disabled
                 };
                 
                 serviceInputs[$"{serviceId}_url"] = urlTextBox;
                 parent.Controls.AddRange(new Control[] { urlLabel, urlTextBox });
             }
 
-            // API Key/Token field
+            // API Key/Token field - shifted right
             var keyLabel = new Label
             {
                 Text = $"{config.CredentialType}:",
                 Size = new Size(80, 20),
-                Location = new Point(config.IsLocal ? 420 : 150, y),
-                ForeColor = DarkTheme.TextColor
+                Location = new Point(config.IsLocal ? 445 : 175, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = $"{serviceId}_key_label"
             };
 
             var keyTextBox = new TextBox
             {
                 Size = new Size(200, 25),
-                Location = new Point(config.IsLocal ? 500 : 230, y - 2),
+                Location = new Point(config.IsLocal ? 525 : 255, y - 2),
                 Name = $"{serviceId}_key",
-                UseSystemPasswordChar = true // Hide sensitive keys
+                UseSystemPasswordChar = true, // Hide sensitive keys
+                Enabled = false // Start disabled
             };
 
             serviceInputs[$"{serviceId}_key"] = keyTextBox;
 
-            // API Link button (for API services)
+            // API Link button (for API services) - shifted right
             Button linkButton = null;
             if (!string.IsNullOrEmpty(config.ApiUrl))
             {
@@ -204,13 +222,15 @@ namespace KometaGUIv3.Forms
                 {
                     Text = "Get API Key",
                     Size = new Size(100, 25),
-                    Location = new Point(config.IsLocal ? 720 : 450, y - 2)
+                    Location = new Point(config.IsLocal ? 745 : 475, y - 2),
+                    Name = $"{serviceId}_link",
+                    Enabled = false // Start disabled
                 };
                 
-                linkButton.Click += (s, e) => System.Diagnostics.Process.Start(config.ApiUrl);
+                linkButton.Click += (s, e) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(config.ApiUrl) { UseShellExecute = true });
             }
 
-            // Advanced configuration button (for complex services)
+            // Advanced configuration button (for complex services) - shifted right
             Button advancedButton = null;
             if (serviceId == "radarr" || serviceId == "sonarr" || serviceId == "trakt" || serviceId == "mal")
             {
@@ -218,19 +238,71 @@ namespace KometaGUIv3.Forms
                 {
                     Text = "Advanced...",
                     Size = new Size(80, 25),
-                    Location = new Point(config.IsLocal ? 840 : 570, y - 2)
+                    Location = new Point(config.IsLocal ? 865 : 595, y - 2),
+                    Name = $"{serviceId}_advanced",
+                    Enabled = false // Start disabled
                 };
                 
                 advancedButton.Click += (s, e) => ShowAdvancedConfig(serviceId, config.Name);
             }
 
-            var controls = new List<Control> { nameLabel, descLabel, keyLabel, keyTextBox };
+            var controls = new List<Control> { enableCheckbox, nameLabel, descLabel, keyLabel, keyTextBox };
             if (linkButton != null) controls.Add(linkButton);
             if (advancedButton != null) controls.Add(advancedButton);
 
             parent.Controls.AddRange(controls.ToArray());
+            
+            // Initialize the disabled visual state
+            UpdateServiceControlsState(serviceId, false);
 
             return y + 50;
+        }
+
+        private void UpdateServiceControlsState(string serviceId, bool isEnabled)
+        {
+            // Find all controls for this service by searching through the parent panel
+            var scrollPanel = this.Controls.OfType<Panel>().FirstOrDefault(p => p.AutoScroll);
+            if (scrollPanel == null) return;
+
+            var serviceControls = scrollPanel.Controls.OfType<Control>()
+                .Where(c => c.Name != null && c.Name.StartsWith($"{serviceId}_"))
+                .ToList();
+
+            foreach (var control in serviceControls)
+            {
+                if (control is TextBox textBox)
+                {
+                    textBox.Enabled = isEnabled;
+                    textBox.BackColor = isEnabled ? DarkTheme.InputBackColor : Color.DarkGray;
+                    textBox.ForeColor = isEnabled ? DarkTheme.TextColor : Color.Gray;
+                }
+                else if (control is Button button && !control.Name.Contains("_enabled"))
+                {
+                    button.Enabled = isEnabled;
+                    button.BackColor = isEnabled ? DarkTheme.ButtonColor : Color.DarkGray;
+                    button.ForeColor = isEnabled ? DarkTheme.TextColor : Color.Gray;
+                }
+                else if (control is Label label && control.Name.Contains("_label"))
+                {
+                    label.ForeColor = isEnabled ? DarkTheme.TextColor : Color.Gray;
+                }
+            }
+
+            // Also find and update the main service name and description labels
+            var allLabels = scrollPanel.Controls.OfType<Label>().ToList();
+            var serviceConfig = LocalServices.ContainsKey(serviceId) ? LocalServices[serviceId] : 
+                               ApiServices.ContainsKey(serviceId) ? ApiServices[serviceId] : null;
+            
+            if (serviceConfig != null)
+            {
+                var nameLabel = allLabels.FirstOrDefault(l => l.Text == serviceConfig.Name);
+                var descLabel = allLabels.FirstOrDefault(l => l.Text == serviceConfig.Description);
+                
+                if (nameLabel != null)
+                    nameLabel.ForeColor = isEnabled ? DarkTheme.TextColor : Color.Gray;
+                if (descLabel != null)
+                    descLabel.ForeColor = isEnabled ? Color.Gray : Color.DarkGray;
+            }
         }
 
         private void ShowAdvancedConfig(string serviceId, string serviceName)
@@ -351,6 +423,7 @@ namespace KometaGUIv3.Forms
 
         private void LoadProfileData()
         {
+            // Load service input values
             foreach (var serviceInput in serviceInputs)
             {
                 if (profile.OptionalServices.ContainsKey(serviceInput.Key))
@@ -359,19 +432,49 @@ namespace KometaGUIv3.Forms
                     serviceInput.Value.UseSystemPasswordChar = false; // Show existing values
                 }
             }
+            
+            // Load enabled states (default to false if not found)
+            foreach (var serviceCheckbox in serviceCheckboxes)
+            {
+                string serviceId = serviceCheckbox.Key;
+                bool isEnabled = profile.EnabledServices.ContainsKey(serviceId) 
+                    ? profile.EnabledServices[serviceId] 
+                    : false; // Default to disabled
+                    
+                serviceCheckbox.Value.Checked = isEnabled;
+                UpdateServiceControlsState(serviceId, isEnabled);
+            }
         }
 
         public void SaveProfileData()
         {
             profile.OptionalServices.Clear();
+            profile.EnabledServices.Clear();
             
+            // Save enabled states
+            foreach (var serviceCheckbox in serviceCheckboxes)
+            {
+                profile.EnabledServices[serviceCheckbox.Key] = serviceCheckbox.Value.Checked;
+            }
+            
+            // Only save service input data if the service is enabled
             foreach (var serviceInput in serviceInputs)
             {
-                if (!string.IsNullOrWhiteSpace(serviceInput.Value.Text))
+                string serviceId = ExtractServiceIdFromInputKey(serviceInput.Key);
+                bool isServiceEnabled = serviceCheckboxes.ContainsKey(serviceId) && serviceCheckboxes[serviceId].Checked;
+                
+                if (isServiceEnabled && !string.IsNullOrWhiteSpace(serviceInput.Value.Text))
                 {
                     profile.OptionalServices[serviceInput.Key] = serviceInput.Value.Text;
                 }
             }
+        }
+        
+        private string ExtractServiceIdFromInputKey(string inputKey)
+        {
+            // inputKey format: "serviceid_url" or "serviceid_key"
+            var parts = inputKey.Split('_');
+            return parts.Length > 1 ? parts[0] : inputKey;
         }
 
         private string ExtractIpFromUrl(string url)
