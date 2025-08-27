@@ -144,27 +144,27 @@ namespace KometaGUIv3.Forms
                 Font = DarkTheme.GetHeaderFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(200, 25),
-                Location = new Point(630, 180),
+                Location = new Point(720, 120),
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            // For Movies: Two images stacked vertically - made much larger without container constraints
+            // For Movies: Two images stacked vertically - immediately under Overlay Preview header
             picPreview1 = new PictureBox
             {
-                Size = new Size(600, 365),
-                Location = new Point(630, 210),
+                Size = new Size(400, 250),
+                Location = new Point(720, 145),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.None
             };
 
             picPreview2 = new PictureBox
             {
-                Size = new Size(600, 365),
-                Location = new Point(630, 585),
+                Size = new Size(400, 250),
+                Location = new Point(720, 405),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.None
             };
 
             // Add controls directly to the main form instead of a container panel
