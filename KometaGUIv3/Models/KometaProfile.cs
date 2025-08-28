@@ -199,6 +199,7 @@ namespace KometaGUIv3.Models
         public string BuilderLevel { get; set; }
         public Dictionary<string, object> TemplateVariables { get; set; }
         public bool IsEnabled { get; set; }
+        public RatingSettings RatingConfig { get; set; }
 
         public OverlayConfiguration()
         {
@@ -206,6 +207,43 @@ namespace KometaGUIv3.Models
             BuilderLevel = "show";
             TemplateVariables = new Dictionary<string, object>();
             IsEnabled = false;
+            RatingConfig = new RatingSettings();
+        }
+    }
+
+    public class RatingSettings
+    {
+        public bool EnableOverlay { get; set; }
+        public RatingTypeConfig UserRating { get; set; }
+        public RatingTypeConfig CriticRating { get; set; }
+        public RatingTypeConfig AudienceRating { get; set; }
+        public string HorizontalPosition { get; set; }
+
+        public RatingSettings()
+        {
+            EnableOverlay = false;
+            UserRating = new RatingTypeConfig { Source = "rt_tomato", DefaultFontSize = 70 };
+            CriticRating = new RatingTypeConfig { Source = "imdb", DefaultFontSize = 70 };
+            AudienceRating = new RatingTypeConfig { Source = "tmdb", DefaultFontSize = 70 };
+            HorizontalPosition = "right";
+        }
+    }
+
+    public class RatingTypeConfig
+    {
+        public bool IsEnabled { get; set; }
+        public string Source { get; set; } // rt_tomato, imdb, tmdb
+        public string CustomFont { get; set; }
+        public int FontSize { get; set; }
+        public int DefaultFontSize { get; set; }
+
+        public RatingTypeConfig()
+        {
+            IsEnabled = false;
+            Source = string.Empty;
+            CustomFont = string.Empty;
+            FontSize = 70;
+            DefaultFontSize = 70;
         }
     }
 

@@ -154,13 +154,17 @@ namespace KometaGUIv3.Forms
                 BackColor = DarkTheme.BackgroundColor
             };
 
+            // Calculate center positions dynamically using actual panel dimensions
+            var panelWidth = contentPanel.Width;
+            var panelHeight = contentPanel.Height;
+            
             var titleLabel = new Label
             {
                 Text = "Welcome to Kometa GUI v3",
                 Font = DarkTheme.GetTitleFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(600, 40),
-                Location = new Point(50, 50),
+                Location = new Point((panelWidth - 600) / 2, 80), // Centered horizontally, 80px from top
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
@@ -182,14 +186,14 @@ This guided setup will help you create professional media library configurations
                 Font = DarkTheme.GetDefaultFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(700, 300),
-                Location = new Point(50, 120)
+                Location = new Point((panelWidth - 700) / 2, 140) // Centered horizontally, below title
             };
 
             var letsGoBtn = new Button
             {
                 Text = "Let's Go!",
                 Size = new Size(150, 50),
-                Location = new Point(350, 450),
+                Location = new Point((panelWidth - 150) / 2, 460), // Centered horizontally, near bottom
                 Font = DarkTheme.GetHeaderFont(),
                 Name = "btnPrimary"
             };
@@ -418,7 +422,7 @@ This guided setup will help you create professional media library configurations
 
             var finalActionsPage = new FinalActionsPage(currentProfile, profileManager);
             contentPanel.Controls.Add(finalActionsPage);
-            btnNext.Enabled = false; // This is the final page
+            btnNext.Enabled = true; // Enable the finish button
             btnNext.Text = "Finish";
         }
 
@@ -476,12 +480,52 @@ This guided setup will help you create professional media library configurations
             else if (currentPageIndex == pageNames.Length - 1 && btnNext.Text == "Finish")
             {
                 // Handle finish button on final page
-                var result = MessageBox.Show("Configuration complete! You can continue using the application or close it.", 
-                    "Configuration Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var result = MessageBox.Show(
+                    "Configuration complete!\n\n" +
+                    "• Your profile has been saved\n" +
+                    "• You can now install and run Kometa\n" +
+                    "• Use the buttons on this page to manage your Kometa installation\n\n" +
+                    "Would you like to:\n" +
+                    "• YES - Stay on this page to run Kometa\n" +
+                    "• NO - Return to profile management", 
+                    "Configuration Complete", 
+                    MessageBoxButtons.YesNo, 
+                    MessageBoxIcon.Information);
                 
-                // Could potentially close the application or return to first page
-                // For now, just disable the button
-                btnNext.Enabled = false;
+                if (result == DialogResult.No)
+                {
+                    // Return to profile management (first page after welcome)
+                    ShowPage(1); // ProfileManagementPage
+                    btnNext.Text = "Next";
+                    btnNext.Enabled = true;
+                    btnBack.Enabled = true;
+                }
+                else
+                {
+                    // Stay on current page, just update button text
+                    btnNext.Text = "Restart Setup";
+                    btnNext.Enabled = true;
+                }
+            }
+            else if (currentPageIndex == pageNames.Length - 1 && btnNext.Text == "Restart Setup")
+            {
+                // Handle restart setup button
+                var result = MessageBox.Show(
+                    "This will restart the setup process from the beginning.\n\n" +
+                    "Your current profile will be preserved, but you'll go through all setup steps again.\n\n" +
+                    "Continue with restart?", 
+                    "Restart Setup", 
+                    MessageBoxButtons.YesNo, 
+                    MessageBoxIcon.Question);
+                
+                if (result == DialogResult.Yes)
+                {
+                    // Go back to profile management page
+                    ShowPage(1); // ProfileManagementPage
+                    btnNext.Text = "Next";
+                    btnNext.Enabled = true;
+                    btnBack.Enabled = true;
+                }
             }
         }
         

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
@@ -593,7 +594,15 @@ namespace KometaGUIv3.Forms
         {
             try
             {
-                System.Diagnostics.Process.Start("https://paypal.com");
+                var donationUrl = "https://www.paypal.com/donate/?business=WBHFP3TMYUHS8&amount=5&no_recurring=1&item_name=Thank+you+for+trying+my+program.+It+took+many+hours+and+late+nights+to+get+it+up+and+running.+Your+donations+are+appreciated%21%C2%A4cy_code=USD";
+                
+                var psi = new ProcessStartInfo
+                {
+                    FileName = donationUrl,
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(psi);
+                LogMessage("Opening PayPal donation page...");
             }
             catch (Exception ex)
             {

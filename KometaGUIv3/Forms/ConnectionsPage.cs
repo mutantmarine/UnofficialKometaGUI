@@ -538,15 +538,8 @@ namespace KometaGUIv3.Forms
                 btnSelectAll.Enabled = clbLibraries.Items.Count > 0;
                 btnUnselectAll.Enabled = clbLibraries.Items.Count > 0;
                 
-                // Auto-select all libraries by default for better UX
-                if (clbLibraries.Items.Count > 0)
-                {
-                    for (int i = 0; i < clbLibraries.Items.Count; i++)
-                    {
-                        clbLibraries.SetItemChecked(i, true);
-                    }
-                    UpdateSelectedLibraries();
-                }
+                // Libraries are unchecked by default - user must manually select desired libraries
+                UpdateSelectedLibraries();
                 
                 // Update profile's last modified time to indicate fresh library data
                 profile.LastModified = DateTime.Now;
@@ -723,11 +716,15 @@ namespace KometaGUIv3.Forms
             
             for (int i = 0; i < clbLibraries.Items.Count; i++)
             {
-                if (clbLibraries.GetItemChecked(i) && i < profile.Plex.AvailableLibraries.Count)
+                if (i < profile.Plex.AvailableLibraries.Count)
                 {
                     var library = profile.Plex.AvailableLibraries[i];
-                    library.IsSelected = true;
-                    profile.SelectedLibraries.Add(library.Name);
+                    library.IsSelected = clbLibraries.GetItemChecked(i); // Set both true AND false
+                    
+                    if (library.IsSelected)
+                    {
+                        profile.SelectedLibraries.Add(library.Name);
+                    }
                 }
             }
         }

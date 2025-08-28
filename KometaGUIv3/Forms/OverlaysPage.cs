@@ -18,8 +18,9 @@ namespace KometaGUIv3.Forms
         private ComboBox cmbMediaType, cmbBuilderLevel;
         private Panel imagePreviewPanel;
         private PictureBox picPreview1, picPreview2;
-        private GroupBox grpRatingConfig, grpOverlays;
+        private GroupBox grpOverlays;
         private Dictionary<string, CheckBox> overlayCheckboxes;
+        private Dictionary<string, Button> advancedButtons;
         private string currentMediaType = "Movies";
         private string currentBuilderLevel = "show";
         private const string OVERLAY_IMAGES_PATH = @"Resources\OverlayPreviews\";
@@ -28,6 +29,7 @@ namespace KometaGUIv3.Forms
         {
             this.profile = profile;
             overlayCheckboxes = new Dictionary<string, CheckBox>();
+            advancedButtons = new Dictionary<string, Button>();
             InitializeComponent();
             SetupControls();
             LoadProfileData();
@@ -107,7 +109,7 @@ namespace KometaGUIv3.Forms
             grpOverlays = new GroupBox
             {
                 Text = "Available Overlays",
-                Size = new Size(580, 650),
+                Size = new Size(640, 650),
                 Location = new Point(30, 180),
                 ForeColor = DarkTheme.TextColor,
                 Font = DarkTheme.GetHeaderFont()
@@ -115,7 +117,7 @@ namespace KometaGUIv3.Forms
 
             var overlayPanel = new Panel
             {
-                Size = new Size(560, 610),
+                Size = new Size(620, 610),
                 Location = new Point(10, 30),
                 AutoScroll = false,
                 BackColor = DarkTheme.BackgroundColor
@@ -124,12 +126,9 @@ namespace KometaGUIv3.Forms
             SetupOverlayCheckboxes(overlayPanel);
             grpOverlays.Controls.Add(overlayPanel);
 
-            // Rating Configuration
-            SetupRatingConfiguration();
-
             this.Controls.AddRange(new Control[] {
                 titleLabel, descriptionLabel, lblMediaType, cmbMediaType,
-                lblBuilderLevel, cmbBuilderLevel, grpOverlays, grpRatingConfig
+                lblBuilderLevel, cmbBuilderLevel, grpOverlays
             });
 
             DarkTheme.ApplyDarkTheme(this);
@@ -144,7 +143,7 @@ namespace KometaGUIv3.Forms
                 Font = DarkTheme.GetHeaderFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(200, 25),
-                Location = new Point(720, 120),
+                Location = new Point(780, 100),
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
@@ -152,7 +151,7 @@ namespace KometaGUIv3.Forms
             picPreview1 = new PictureBox
             {
                 Size = new Size(400, 250),
-                Location = new Point(720, 145),
+                Location = new Point(780, 130),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
                 BorderStyle = BorderStyle.None
@@ -161,7 +160,7 @@ namespace KometaGUIv3.Forms
             picPreview2 = new PictureBox
             {
                 Size = new Size(400, 250),
-                Location = new Point(720, 405),
+                Location = new Point(780, 390),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = DarkTheme.BackgroundColor,
                 BorderStyle = BorderStyle.None
@@ -211,8 +210,21 @@ namespace KometaGUIv3.Forms
                     Font = new Font("Segoe UI", 8F, FontStyle.Bold)
                 };
 
-                parent.Controls.AddRange(new Control[] { checkBox, descLabel, posLabel });
+                var advancedButton = new Button
+                {
+                    Text = "Advanced",
+                    Size = new Size(80, 25),
+                    Location = new Point(525, y + 2),
+                    Font = DarkTheme.GetDefaultFont(),
+                    Name = $"btnAdvanced_{overlay.Key}",
+                    Tag = overlay.Value,
+                    Enabled = false // Initially disabled until overlay is checked
+                };
+                advancedButton.Click += AdvancedButton_Click;
+
+                parent.Controls.AddRange(new Control[] { checkBox, descLabel, posLabel, advancedButton });
                 overlayCheckboxes[overlay.Key] = checkBox;
+                advancedButtons[overlay.Key] = advancedButton;
                 y += 75;
             }
         }
@@ -225,10 +237,10 @@ namespace KometaGUIv3.Forms
                 {
                     // Show both movie images stacked - use much larger sizes
                     picPreview1.Size = new Size(600, 365);
-                    picPreview1.Location = new Point(630, 210);
+                    picPreview1.Location = new Point(690, 130);
                     picPreview2.Visible = true;
                     picPreview2.Size = new Size(600, 365);
-                    picPreview2.Location = new Point(630, 585);
+                    picPreview2.Location = new Point(690, 505);
                     
                     LoadWebPImage(picPreview1, "movie_overlay_preview_1.webp");
                     LoadWebPImage(picPreview2, "movie_overlay_preview_2.webp");
@@ -237,7 +249,7 @@ namespace KometaGUIv3.Forms
                 {
                     // Show single image based on builder level, make it much larger
                     picPreview1.Size = new Size(600, 740);
-                    picPreview1.Location = new Point(630, 210); // Use full height for single image
+                    picPreview1.Location = new Point(690, 130); // Use full height for single image
                     picPreview2.Visible = false;
                     
                     string imageName = $"tvshows_{currentBuilderLevel}_overlay_preview.webp";
@@ -320,67 +332,6 @@ namespace KometaGUIv3.Forms
             pictureBox.Image = bmp;
         }
 
-        private void SetupRatingConfiguration()
-        {
-            grpRatingConfig = new GroupBox
-            {
-                Text = "Rating Configuration",
-                Size = new Size(350, 200),
-                Location = new Point(630, 640),
-                ForeColor = DarkTheme.TextColor,
-                Font = DarkTheme.GetHeaderFont()
-            };
-
-            var lblRatingNote = new Label
-            {
-                Text = "Configure rating overlays when 'Ratings' overlay is selected:",
-                Font = DarkTheme.GetDefaultFont(),
-                ForeColor = DarkTheme.TextColor,
-                Size = new Size(320, 25),
-                Location = new Point(15, 25)
-            };
-
-            // Rating 1 Configuration
-            var lbl1 = new Label { Text = "Rating 1 (User):", Size = new Size(110, 20), Location = new Point(15, 60), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var cmb1Image = new ComboBox { Size = new Size(90, 25), Location = new Point(130, 57), DropDownStyle = ComboBoxStyle.DropDownList, Name = "rating1_image", Font = DarkTheme.GetDefaultFont() };
-            cmb1Image.Items.AddRange(new[] { "rt_tomato", "imdb", "tmdb" });
-            cmb1Image.SelectedItem = "rt_tomato";
-
-            var lbl1Font = new Label { Text = "Font Size:", Size = new Size(60, 20), Location = new Point(230, 60), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var num1Font = new NumericUpDown { Size = new Size(60, 25), Location = new Point(290, 57), Minimum = 30, Maximum = 100, Value = 63, Name = "rating1_font_size", Font = DarkTheme.GetDefaultFont() };
-
-            // Rating 2 Configuration  
-            var lbl2 = new Label { Text = "Rating 2 (Critic):", Size = new Size(110, 20), Location = new Point(15, 90), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var cmb2Image = new ComboBox { Size = new Size(90, 25), Location = new Point(130, 87), DropDownStyle = ComboBoxStyle.DropDownList, Name = "rating2_image", Font = DarkTheme.GetDefaultFont() };
-            cmb2Image.Items.AddRange(new[] { "rt_tomato", "imdb", "tmdb" });
-            cmb2Image.SelectedItem = "imdb";
-
-            var lbl2Font = new Label { Text = "Font Size:", Size = new Size(60, 20), Location = new Point(230, 90), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var num2Font = new NumericUpDown { Size = new Size(60, 25), Location = new Point(290, 87), Minimum = 30, Maximum = 100, Value = 70, Name = "rating2_font_size", Font = DarkTheme.GetDefaultFont() };
-
-            // Rating 3 Configuration
-            var lbl3 = new Label { Text = "Rating 3 (Audience):", Size = new Size(110, 20), Location = new Point(15, 120), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var cmb3Image = new ComboBox { Size = new Size(90, 25), Location = new Point(130, 117), DropDownStyle = ComboBoxStyle.DropDownList, Name = "rating3_image", Font = DarkTheme.GetDefaultFont() };
-            cmb3Image.Items.AddRange(new[] { "rt_tomato", "imdb", "tmdb" });
-            cmb3Image.SelectedItem = "tmdb";
-
-            var lbl3Font = new Label { Text = "Font Size:", Size = new Size(60, 20), Location = new Point(230, 120), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var num3Font = new NumericUpDown { Size = new Size(60, 25), Location = new Point(290, 117), Minimum = 30, Maximum = 100, Value = 70, Name = "rating3_font_size", Font = DarkTheme.GetDefaultFont() };
-
-            // Horizontal Position
-            var lblHPos = new Label { Text = "Position:", Size = new Size(60, 20), Location = new Point(15, 155), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var rbLeft = new RadioButton { Text = "Left", Size = new Size(60, 20), Location = new Point(80, 155), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont() };
-            var rbRight = new RadioButton { Text = "Right", Size = new Size(65, 20), Location = new Point(150, 155), ForeColor = DarkTheme.TextColor, Font = DarkTheme.GetDefaultFont(), Checked = true };
-
-            grpRatingConfig.Controls.AddRange(new Control[] {
-                lblRatingNote, lbl1, cmb1Image, lbl1Font, num1Font,
-                lbl2, cmb2Image, lbl2Font, num2Font,
-                lbl3, cmb3Image, lbl3Font, num3Font,
-                lblHPos, rbLeft, rbRight
-            });
-
-            grpRatingConfig.Enabled = false; // Enable when ratings overlay is selected
-        }
 
         private Dictionary<string, OverlayInfo> GetAvailableOverlaysForCurrentSelection()
         {
@@ -422,12 +373,17 @@ namespace KometaGUIv3.Forms
 
         private void UpdateAvailableOverlays()
         {
-            // Clear existing checkboxes
+            // Clear existing checkboxes and advanced buttons
             foreach (var checkbox in overlayCheckboxes.Values)
             {
                 checkbox.Parent?.Controls.Remove(checkbox);
             }
+            foreach (var button in advancedButtons.Values)
+            {
+                button.Parent?.Controls.Remove(button);
+            }
             overlayCheckboxes.Clear();
+            advancedButtons.Clear();
 
             // Find the overlay panel and refresh it
             if (grpOverlays != null)
@@ -472,13 +428,60 @@ namespace KometaGUIv3.Forms
                     profile.OverlaySettings.Remove(overlayKey);
                 }
 
-                // Enable rating configuration if ratings overlay is selected
-                bool ratingsSelected = overlayCheckboxes.Values.Any(cb => 
-                    cb.Tag is OverlayInfo info && 
-                    info.Id.ToLower().Contains("rating") && 
-                    cb.Checked);
-                    
-                grpRatingConfig.Enabled = ratingsSelected;
+                // Enable/disable the corresponding Advanced button
+                if (advancedButtons.ContainsKey(overlayInfo.Id))
+                {
+                    advancedButtons[overlayInfo.Id].Enabled = checkBox.Checked;
+                }
+            }
+        }
+
+        private void AdvancedButton_Click(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.Tag is OverlayInfo overlayInfo)
+            {
+                // Handle different overlay types
+                switch (overlayInfo.Id.ToLower())
+                {
+                    case "ratings":
+                        ShowRatingsAdvancedDialog(overlayInfo);
+                        break;
+                    default:
+                        // For now, show a placeholder message for other overlay types
+                        MessageBox.Show($"Advanced configuration for '{overlayInfo.Name}' coming soon!", 
+                            "Advanced Configuration", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                }
+            }
+        }
+
+        private void ShowRatingsAdvancedDialog(OverlayInfo overlayInfo)
+        {
+            var overlayKey = $"{overlayInfo.Id}_{currentMediaType}_{currentBuilderLevel}";
+            
+            // Get or create overlay configuration
+            if (!profile.OverlaySettings.ContainsKey(overlayKey))
+            {
+                profile.OverlaySettings[overlayKey] = new OverlayConfiguration
+                {
+                    OverlayType = overlayInfo.Id,
+                    BuilderLevel = currentBuilderLevel,
+                    IsEnabled = false
+                };
+            }
+
+            var overlayConfig = profile.OverlaySettings[overlayKey];
+            
+            using (var ratingsForm = new RatingsAdvancedForm(profile, overlayConfig, overlayKey))
+            {
+                if (ratingsForm.ShowDialog(this) == DialogResult.OK)
+                {
+                    // Update the main overlay checkbox based on the advanced settings
+                    if (overlayCheckboxes.ContainsKey(overlayInfo.Id))
+                    {
+                        overlayCheckboxes[overlayInfo.Id].Checked = overlayConfig.RatingConfig.EnableOverlay;
+                    }
+                }
             }
         }
 
