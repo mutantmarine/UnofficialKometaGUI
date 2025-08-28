@@ -563,20 +563,65 @@ namespace KometaGUIv3.Forms
             using (var folderDialog = new FolderBrowserDialog())
             {
                 folderDialog.Description = "Select your Kometa installation directory";
-                folderDialog.ShowNewFolderButton = false;
+                folderDialog.ShowNewFolderButton = true;
 
                 if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
-                    if (IsValidKometaDirectory(folderDialog.SelectedPath))
+                    var selectedPath = folderDialog.SelectedPath;
+                    
+                    if (IsValidKometaDirectory(selectedPath))
                     {
-                        txtKometaDirectory.Text = folderDialog.SelectedPath;
-                        profile.KometaDirectory = folderDialog.SelectedPath;
+                        // Valid Kometa directory found
+                        txtKometaDirectory.Text = selectedPath;
+                        profile.KometaDirectory = selectedPath;
                         ValidatePageInputs(null, null);
+                    }
+                    else if (IsEmptyDirectory(selectedPath))
+                    {
+                        // Empty directory - offer to install Kometa here
+                        var result = MessageBox.Show(
+                            $"The selected directory appears to be empty:\n{selectedPath}\n\n" +
+                            "Would you like to use this directory for Kometa installation?\n\n" +
+                            "You can install Kometa later from the Final Actions page.",
+                            "Empty Directory - Install Kometa Here?",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
+
+                        if (result == DialogResult.Yes)
+                        {
+                            txtKometaDirectory.Text = selectedPath;
+                            profile.KometaDirectory = selectedPath;
+                            ValidatePageInputs(null, null);
+                            
+                            MessageBox.Show(
+                                "Directory set for Kometa installation.\n\n" +
+                                "Remember to install Kometa from the Final Actions page before running it.",
+                                "Installation Directory Set",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                        }
                     }
                     else
                     {
-                        MessageBox.Show("Selected directory does not appear to contain a valid Kometa installation.\n\nPlease ensure the directory contains kometa.py or Kometa executable files.", 
-                            "Invalid Directory", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        // Directory has files but no valid Kometa installation
+                        var result = MessageBox.Show(
+                            "Selected directory does not appear to contain a valid Kometa installation.\n\n" +
+                            "The directory contains files but is missing:\n" +
+                            "• kometa.py (main script)\n" +
+                            "• requirements.txt (dependencies)\n" +
+                            "• defaults folder (collection templates)\n\n" +
+                            "Would you like to use this directory anyway?\n" +
+                            "(You can install/reinstall Kometa from the Final Actions page)",
+                            "Invalid Kometa Directory",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
+
+                        if (result == DialogResult.Yes)
+                        {
+                            txtKometaDirectory.Text = selectedPath;
+                            profile.KometaDirectory = selectedPath;
+                            ValidatePageInputs(null, null);
+                        }
                     }
                 }
             }
@@ -593,6 +638,21 @@ namespace KometaGUIv3.Forms
             return kometaFiles.Any(file => 
                 File.Exists(Path.Combine(path, file)) || 
                 Directory.Exists(Path.Combine(path, file)));
+        }
+
+        private bool IsEmptyDirectory(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+                return false;
+
+            try
+            {
+                return !Directory.GetFiles(path).Any() && !Directory.GetDirectories(path).Any();
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void BtnSelectAll_Click(object sender, EventArgs e)
@@ -676,8 +736,12 @@ namespace KometaGUIv3.Forms
         {
             bool wasValid = isValidated;
             
-            isValidated = !string.IsNullOrWhiteSpace(txtKometaDirectory.Text) &&
-                         IsValidKometaDirectory(txtKometaDirectory.Text) &&
+            // Allow both valid Kometa directories and empty directories (for installation)
+            var directoryValid = !string.IsNullOrWhiteSpace(txtKometaDirectory.Text) &&
+                               Directory.Exists(txtKometaDirectory.Text) &&
+                               (IsValidKometaDirectory(txtKometaDirectory.Text) || IsEmptyDirectory(txtKometaDirectory.Text));
+            
+            isValidated = directoryValid &&
                          profile.Plex.IsAuthenticated &&
                          !string.IsNullOrWhiteSpace(profile.Plex.Url) &&
                          profile.SelectedLibraries.Count > 0 &&

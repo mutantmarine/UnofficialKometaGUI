@@ -26,7 +26,11 @@
       "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
       "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
       "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
-      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)"
+      "Read(/C:\\Users\\1994c\\OneDrive\\Pictures/**)",
+      "WebSearch",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)",
+      "Read(C:\\Users\\1994c\\Downloads\\Kometa-2.2.0/**)"
     ],
     "deny": [],
     "ask": []

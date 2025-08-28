@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using KometaGUIv3.Models;
 using KometaGUIv3.Services;
@@ -15,14 +16,17 @@ namespace KometaGUIv3.Forms
         private KometaRunner kometaRunner;
         private TaskSchedulerService taskScheduler;
         private ProfileManager profileManager;
+        private KometaInstaller kometaInstaller;
+        private SystemRequirements systemRequirements;
 
         // UI Controls
         private RichTextBox rtbLogs;
         private Button btnGenerateYaml, btnRunKometa, btnStopKometa, btnCreateSchedule, btnRemoveSchedule, btnStartLocalhost, btnPayPal;
+        private Button btnInstallKometa, btnCheckInstallation, btnUpdateKometa;
         private ComboBox cmbScheduleFrequency;
         private NumericUpDown numScheduleInterval;
-        private Label lblScheduleStatus, lblLocalhostStatus;
-        private ProgressBar progressBar;
+        private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus;
+        private ProgressBar progressBar, installationProgressBar;
         private bool isLocalhostRunning = false;
 
         public FinalActionsPage(KometaProfile profile, ProfileManager profileManager)
@@ -32,11 +36,34 @@ namespace KometaGUIv3.Forms
             this.yamlGenerator = new YamlGenerator();
             this.kometaRunner = new KometaRunner();
             this.taskScheduler = new TaskSchedulerService();
+            this.kometaInstaller = new KometaInstaller();
+            this.systemRequirements = new SystemRequirements();
 
             InitializeComponent();
             SetupControls();
             SetupEventHandlers();
             UpdateScheduleStatus();
+            
+            // Defer the async call to avoid constructor issues
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await CheckInstallationStatusAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't crash the constructor
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke(new Action(() => LogMessage($"Error during initial installation check: {ex.Message}")));
+                    }
+                    else
+                    {
+                        LogMessage($"Error during initial installation check: {ex.Message}");
+                    }
+                }
+            });
         }
 
         private void SetupControls()
@@ -64,12 +91,75 @@ namespace KometaGUIv3.Forms
                 Location = new Point(30, 65)
             };
 
+            // Installation Status Panel
+            var installationPanel = new GroupBox
+            {
+                Text = "Kometa Installation",
+                Size = new Size(1100, 140),
+                Location = new Point(30, 110),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            lblInstallationStatus = new Label
+            {
+                Text = "Checking installation status...",
+                Size = new Size(500, 60),
+                Location = new Point(20, 30),
+                ForeColor = Color.Orange,
+                Font = DarkTheme.GetDefaultFont()
+            };
+
+            btnCheckInstallation = new Button
+            {
+                Text = "Check Status",
+                Size = new Size(100, 30),
+                Location = new Point(530, 30)
+            };
+
+            btnInstallKometa = new Button
+            {
+                Text = "Install Kometa",
+                Size = new Size(120, 30),
+                Location = new Point(640, 30),
+                Name = "btnPrimary"
+            };
+
+            btnUpdateKometa = new Button
+            {
+                Text = "Update Kometa",
+                Size = new Size(120, 30),
+                Location = new Point(770, 30),
+                Enabled = false
+            };
+
+            installationProgressBar = new ProgressBar
+            {
+                Size = new Size(860, 20),
+                Location = new Point(20, 70),
+                Visible = false,
+                Style = ProgressBarStyle.Continuous
+            };
+
+            var installProgressLabel = new Label
+            {
+                Text = "",
+                Size = new Size(860, 20),
+                Location = new Point(20, 95),
+                ForeColor = DarkTheme.TextColor,
+                Name = "installProgressLabel"
+            };
+
+            installationPanel.Controls.AddRange(new Control[] {
+                lblInstallationStatus, btnCheckInstallation, btnInstallKometa, btnUpdateKometa,
+                installationProgressBar, installProgressLabel
+            });
+
             // Action Buttons Panel
             var actionsPanel = new GroupBox
             {
                 Text = "Actions",
                 Size = new Size(550, 200),
-                Location = new Point(30, 110),
+                Location = new Point(30, 260),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -198,7 +288,7 @@ namespace KometaGUIv3.Forms
             progressBar = new ProgressBar
             {
                 Size = new Size(550, 25),
-                Location = new Point(30, 325),
+                Location = new Point(30, 475),
                 Style = ProgressBarStyle.Marquee,
                 Visible = false
             };
@@ -207,14 +297,14 @@ namespace KometaGUIv3.Forms
             var logPanel = new GroupBox
             {
                 Text = "Execution Logs",
-                Size = new Size(1300, 450), // Increased for bigger window
-                Location = new Point(30, 360),
+                Size = new Size(1300, 350), // Reduced to make room for installation panel
+                Location = new Point(30, 510),
                 ForeColor = DarkTheme.TextColor
             };
 
             rtbLogs = new RichTextBox
             {
-                Size = new Size(1280, 420), // Increased for bigger window
+                Size = new Size(1280, 320), // Adjusted for reduced log panel size
                 Location = new Point(10, 25),
                 BackColor = DarkTheme.InputBackColor,
                 ForeColor = DarkTheme.TextColor,
@@ -229,14 +319,14 @@ namespace KometaGUIv3.Forms
             var previewPanel = new GroupBox
             {
                 Text = "Configuration Preview",
-                Size = new Size(520, 240), // Reduced height to prevent overlap with logs
-                Location = new Point(610, 110),
+                Size = new Size(520, 200), // Reduced height to fit with installation panel
+                Location = new Point(610, 260),
                 ForeColor = DarkTheme.TextColor
             };
 
             var rtbPreview = new RichTextBox
             {
-                Size = new Size(500, 210), // Adjusted to match reduced panel height
+                Size = new Size(500, 170), // Adjusted to match reduced panel height
                 Location = new Point(10, 25),
                 BackColor = DarkTheme.InputBackColor,
                 ForeColor = DarkTheme.TextColor,
@@ -249,7 +339,7 @@ namespace KometaGUIv3.Forms
             previewPanel.Controls.Add(rtbPreview);
 
             this.Controls.AddRange(new Control[] {
-                titleLabel, descriptionLabel, actionsPanel, progressBar, logPanel, previewPanel
+                titleLabel, descriptionLabel, installationPanel, actionsPanel, progressBar, logPanel, previewPanel
             });
 
             DarkTheme.ApplyDarkTheme(this);
@@ -265,8 +355,15 @@ namespace KometaGUIv3.Forms
             btnRemoveSchedule.Click += BtnRemoveSchedule_Click;
             btnStartLocalhost.Click += BtnStartLocalhost_Click;
             btnPayPal.Click += BtnPayPal_Click;
+            
+            btnCheckInstallation.Click += BtnCheckInstallation_Click;
+            btnInstallKometa.Click += BtnInstallKometa_Click;
+            btnUpdateKometa.Click += BtnUpdateKometa_Click;
 
             kometaRunner.LogReceived += KometaRunner_LogReceived;
+            kometaInstaller.LogReceived += KometaInstaller_LogReceived;
+            kometaInstaller.ProgressChanged += KometaInstaller_ProgressChanged;
+            systemRequirements.LogReceived += SystemRequirements_LogReceived;
         }
 
         private void BtnGenerateYaml_Click(object sender, EventArgs e)
@@ -566,6 +663,433 @@ namespace KometaGUIv3.Forms
             catch (Exception ex)
             {
                 LogMessage($"Error generating preview: {ex.Message}");
+            }
+        }
+
+        private async void BtnCheckInstallation_Click(object sender, EventArgs e)
+        {
+            await CheckInstallationStatusAsync();
+        }
+
+        private async void BtnInstallKometa_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                LogMessage("Install Kometa button clicked");
+                
+                if (profile == null)
+                {
+                    MessageBox.Show("Profile not initialized. Please restart the application.", 
+                        "Profile Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.KometaDirectory))
+                {
+                    MessageBox.Show("Please set a Kometa directory in the Connections page before installing.", 
+                        "Kometa Directory Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Check if this is an existing installation and provide appropriate prompt
+                var installStatus = await kometaInstaller.CheckInstallationStatusAsync(profile.KometaDirectory);
+                DialogResult result;
+                bool forceReinstall = false;
+
+                if (installStatus.IsKometaInstalled)
+                {
+                    // Existing installation detected - offer update/reinstall options
+                    var existingVersionText = !string.IsNullOrEmpty(installStatus.KometaVersion) 
+                        ? $" (Version: {installStatus.KometaVersion})" 
+                        : "";
+                    
+                    result = MessageBox.Show(
+                        $"An existing Kometa installation was found in:\n{profile.KometaDirectory}{existingVersionText}\n\n" +
+                        "Would you like to:\n" +
+                        "• YES - Update/refresh the existing installation\n" +
+                        "• NO - Cancel installation\n\n" +
+                        "To completely reinstall from scratch, hold SHIFT and click Install again.",
+                        "Existing Kometa Installation Found",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                }
+                else if (Directory.Exists(profile.KometaDirectory) && 
+                        (Directory.GetFiles(profile.KometaDirectory).Length > 0 || Directory.GetDirectories(profile.KometaDirectory).Length > 0))
+                {
+                    // Directory has content but no Kometa installation
+                    result = MessageBox.Show(
+                        $"The selected directory is not empty:\n{profile.KometaDirectory}\n\n" +
+                        "Kometa will be installed alongside existing files.\n\n" +
+                        "The installation process includes:\n" +
+                        "• Installing Python (if not found)\n" +
+                        "• Installing Git (if not found)\n" +
+                        "• Cloning the Kometa repository\n" +
+                        "• Creating a virtual environment\n" +
+                        "• Installing Python dependencies\n\n" +
+                        "Continue with installation?",
+                        "Install Kometa in Existing Directory",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                }
+                else
+                {
+                    // Standard installation prompt for empty/new directories
+                    result = MessageBox.Show(
+                        $"This will install Kometa and all its dependencies to:\n{profile.KometaDirectory}\n\n" +
+                        "The installation process includes:\n" +
+                        "• Installing Python (if not found)\n" +
+                        "• Installing Git (if not found)\n" +
+                        "• Cloning the Kometa repository\n" +
+                        "• Creating a virtual environment\n" +
+                        "• Installing Python dependencies\n\n" +
+                        "This process may take several minutes and requires internet access.\n\n" +
+                        "Continue with installation?",
+                        "Confirm Kometa Installation",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                }
+
+                // Check if SHIFT key is held for force reinstall
+                if (result == DialogResult.Yes && Control.ModifierKeys == Keys.Shift && installStatus.IsKometaInstalled)
+                {
+                    var forceResult = MessageBox.Show(
+                        "SHIFT key detected. This will completely remove the existing installation and reinstall from scratch.\n\n" +
+                        "⚠️ WARNING: All existing Kometa data, configurations, and customizations will be lost!\n\n" +
+                        "Are you sure you want to proceed with a complete reinstall?",
+                        "Force Reinstall Confirmation",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+                    
+                    if (forceResult == DialogResult.Yes)
+                    {
+                        forceReinstall = true;
+                        LogMessage("User confirmed force reinstall (SHIFT+Click detected)");
+                    }
+                    else
+                    {
+                        result = DialogResult.No; // Cancel if user doesn't confirm force reinstall
+                    }
+                }
+
+                if (result == DialogResult.Yes)
+                {
+                    LogMessage("User confirmed Kometa installation");
+                    LogMessage("Starting Kometa installation...");
+                    
+                    // Disable controls safely
+                    SafeUpdateUI(() =>
+                    {
+                        if (btnInstallKometa != null && !btnInstallKometa.IsDisposed) btnInstallKometa.Enabled = false;
+                        if (btnUpdateKometa != null && !btnUpdateKometa.IsDisposed) btnUpdateKometa.Enabled = false;
+                        if (btnRunKometa != null && !btnRunKometa.IsDisposed) btnRunKometa.Enabled = false;
+                        if (installationProgressBar != null && !installationProgressBar.IsDisposed)
+                        {
+                            installationProgressBar.Visible = true;
+                            installationProgressBar.Value = 0;
+                        }
+                    });
+
+                    if (kometaInstaller == null)
+                    {
+                        LogMessage("Error: KometaInstaller is not initialized");
+                        MessageBox.Show("Installation service not available. Please restart the application.", 
+                            "Service Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    var success = await kometaInstaller.InstallKometaAsync(profile.KometaDirectory, forceReinstall);
+
+                    if (success)
+                    {
+                        LogMessage("Kometa installation completed successfully!");
+                        MessageBox.Show("Kometa has been installed successfully!", "Installation Complete", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await CheckInstallationStatusAsync();
+                    }
+                    else
+                    {
+                        LogMessage("Kometa installation failed. Please check the logs for details.");
+                        MessageBox.Show("Kometa installation failed. Please check the logs for details.", 
+                            "Installation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+                    SafeUpdateUI(() =>
+                    {
+                        if (installationProgressBar != null && !installationProgressBar.IsDisposed)
+                            installationProgressBar.Visible = false;
+                        if (btnInstallKometa != null && !btnInstallKometa.IsDisposed)
+                            btnInstallKometa.Enabled = true;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Installation error: {ex.Message}");
+                MessageBox.Show($"Installation error: {ex.Message}", "Installation Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
+                SafeUpdateUI(() =>
+                {
+                    if (installationProgressBar != null && !installationProgressBar.IsDisposed)
+                        installationProgressBar.Visible = false;
+                    if (btnInstallKometa != null && !btnInstallKometa.IsDisposed)
+                        btnInstallKometa.Enabled = true;
+                    if (btnUpdateKometa != null && !btnUpdateKometa.IsDisposed)
+                        btnUpdateKometa.Enabled = false;
+                    if (btnRunKometa != null && !btnRunKometa.IsDisposed)
+                        btnRunKometa.Enabled = false;
+                });
+            }
+        }
+
+        private async void BtnUpdateKometa_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                LogMessage("Starting Kometa update...");
+                btnUpdateKometa.Enabled = false;
+                btnRunKometa.Enabled = false;
+
+                var success = await kometaInstaller.UpdateKometaAsync(profile.KometaDirectory);
+
+                if (success)
+                {
+                    LogMessage("Kometa updated successfully!");
+                    MessageBox.Show("Kometa has been updated successfully!", "Update Complete", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await CheckInstallationStatusAsync();
+                }
+                else
+                {
+                    LogMessage("Kometa update failed. Please check the logs for details.");
+                    MessageBox.Show("Kometa update failed. Please check the logs for details.", 
+                        "Update Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Update error: {ex.Message}");
+                MessageBox.Show($"Update error: {ex.Message}", "Update Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnUpdateKometa.Enabled = true;
+                await CheckInstallationStatusAsync();
+            }
+        }
+
+        private async Task CheckInstallationStatusAsync()
+        {
+            try
+            {
+                if (profile == null || string.IsNullOrWhiteSpace(profile.KometaDirectory))
+                {
+                    SafeUpdateUI(() =>
+                    {
+                        if (lblInstallationStatus != null && !lblInstallationStatus.IsDisposed)
+                        {
+                            lblInstallationStatus.Text = "No Kometa directory set.\nPlease set a directory in the Connections page.";
+                            lblInstallationStatus.ForeColor = Color.Red;
+                        }
+                        if (btnInstallKometa != null && !btnInstallKometa.IsDisposed) btnInstallKometa.Enabled = true;
+                        if (btnUpdateKometa != null && !btnUpdateKometa.IsDisposed) btnUpdateKometa.Enabled = false;
+                        if (btnRunKometa != null && !btnRunKometa.IsDisposed) btnRunKometa.Enabled = false;
+                    });
+                    return;
+                }
+
+                SafeUpdateUI(() =>
+                {
+                    if (lblInstallationStatus != null && !lblInstallationStatus.IsDisposed)
+                    {
+                        lblInstallationStatus.Text = "Checking installation status...";
+                        lblInstallationStatus.ForeColor = Color.Orange;
+                    }
+                });
+                
+                // Check system requirements first
+                var systemCheck = await systemRequirements.CheckSystemRequirementsAsync();
+                
+                // Check Kometa installation
+                var installStatus = await kometaInstaller.CheckInstallationStatusAsync(profile.KometaDirectory);
+
+                var statusText = "";
+                var allGood = true;
+
+                // Python status
+                if (systemCheck.IsPythonInstalled)
+                {
+                    statusText += $"✓ Python {systemCheck.PythonVersion}\n";
+                }
+                else
+                {
+                    statusText += "✗ Python not installed\n";
+                    allGood = false;
+                }
+
+                // Git status
+                if (systemCheck.IsGitInstalled)
+                {
+                    statusText += $"✓ Git {systemCheck.GitVersion}\n";
+                }
+                else
+                {
+                    statusText += "✗ Git not installed\n";
+                    allGood = false;
+                }
+
+                // Kometa status
+                if (installStatus.IsKometaInstalled)
+                {
+                    statusText += $"✓ Kometa {installStatus.KometaVersion}\n";
+                }
+                else
+                {
+                    statusText += "✗ Kometa not installed\n";
+                    allGood = false;
+                }
+
+                // Virtual Environment status
+                if (installStatus.IsVirtualEnvironmentReady)
+                {
+                    statusText += "✓ Virtual environment ready\n";
+                }
+                else if (installStatus.IsKometaInstalled)
+                {
+                    statusText += "✗ Virtual environment not ready\n";
+                    allGood = false;
+                }
+
+                // Dependencies status
+                if (installStatus.AreDependenciesInstalled)
+                {
+                    statusText += "✓ Dependencies installed";
+                }
+                else if (installStatus.IsVirtualEnvironmentReady)
+                {
+                    statusText += "✗ Dependencies not installed";
+                    allGood = false;
+                }
+
+                SafeUpdateUI(() =>
+                {
+                    if (lblInstallationStatus != null && !lblInstallationStatus.IsDisposed)
+                    {
+                        lblInstallationStatus.Text = statusText;
+
+                        if (allGood)
+                        {
+                            lblInstallationStatus.ForeColor = Color.LightGreen;
+                        }
+                        else
+                        {
+                            lblInstallationStatus.ForeColor = Color.Orange;
+                        }
+
+                        if (!string.IsNullOrEmpty(installStatus.ErrorMessage))
+                        {
+                            lblInstallationStatus.Text += $"\n\nError: {installStatus.ErrorMessage}";
+                            lblInstallationStatus.ForeColor = Color.Red;
+                        }
+                    }
+
+                    if (btnInstallKometa != null && !btnInstallKometa.IsDisposed)
+                        btnInstallKometa.Enabled = true;
+                    
+                    if (btnUpdateKometa != null && !btnUpdateKometa.IsDisposed)
+                        btnUpdateKometa.Enabled = allGood || installStatus.IsKometaInstalled;
+                    
+                    if (btnRunKometa != null && !btnRunKometa.IsDisposed)
+                        btnRunKometa.Enabled = allGood;
+                });
+            }
+            catch (Exception ex)
+            {
+                SafeUpdateUI(() =>
+                {
+                    if (lblInstallationStatus != null && !lblInstallationStatus.IsDisposed)
+                    {
+                        lblInstallationStatus.Text = $"Error checking installation: {ex.Message}";
+                        lblInstallationStatus.ForeColor = Color.Red;
+                    }
+                });
+                LogMessage($"Error checking installation: {ex.Message}");
+            }
+        }
+
+        private void KometaInstaller_LogReceived(object sender, string logMessage)
+        {
+            if (rtbLogs.InvokeRequired)
+            {
+                rtbLogs.Invoke(new Action(() => LogMessage(logMessage)));
+            }
+            else
+            {
+                LogMessage(logMessage);
+            }
+        }
+
+        private void KometaInstaller_ProgressChanged(object sender, int progress)
+        {
+            if (installationProgressBar.InvokeRequired)
+            {
+                installationProgressBar.Invoke(new Action(() => 
+                {
+                    installationProgressBar.Value = progress;
+                    var progressLabel = this.Controls.Find("installProgressLabel", true)[0] as Label;
+                    if (progressLabel != null)
+                    {
+                        progressLabel.Text = $"Installation Progress: {progress}%";
+                    }
+                }));
+            }
+            else
+            {
+                installationProgressBar.Value = progress;
+                var progressLabel = this.Controls.Find("installProgressLabel", true)[0] as Label;
+                if (progressLabel != null)
+                {
+                    progressLabel.Text = $"Installation Progress: {progress}%";
+                }
+            }
+        }
+
+        private void SystemRequirements_LogReceived(object sender, string logMessage)
+        {
+            if (rtbLogs.InvokeRequired)
+            {
+                rtbLogs.Invoke(new Action(() => LogMessage(logMessage)));
+            }
+            else
+            {
+                LogMessage(logMessage);
+            }
+        }
+
+        private void SafeUpdateUI(Action updateAction)
+        {
+            try
+            {
+                if (this.IsDisposed || this.Disposing)
+                    return;
+
+                if (this.InvokeRequired)
+                {
+                    this.BeginInvoke(updateAction);
+                }
+                else
+                {
+                    updateAction();
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Control was disposed, ignore
+            }
+            catch (InvalidOperationException)
+            {
+                // Handle was not created or control is disposing
             }
         }
 

@@ -11,6 +11,13 @@ namespace KometaGUIv3.Services
     {
         public event EventHandler<string> LogReceived;
         private Process kometaProcess;
+        private readonly KometaInstaller kometaInstaller;
+
+        public KometaRunner()
+        {
+            kometaInstaller = new KometaInstaller();
+            kometaInstaller.LogReceived += (s, message) => LogReceived?.Invoke(this, message);
+        }
 
         public async Task<bool> RunKometaAsync(KometaProfile profile, string configPath)
         {
@@ -22,35 +29,75 @@ namespace KometaGUIv3.Services
                     return false;
                 }
 
-                var kometaPath = FindKometaExecutable(profile.KometaDirectory);
-                if (string.IsNullOrEmpty(kometaPath))
+                // Check installation status first
+                LogReceived?.Invoke(this, "Checking Kometa installation...");
+                var installStatus = await kometaInstaller.CheckInstallationStatusAsync(profile.KometaDirectory);
+                
+                if (!installStatus.IsKometaInstalled)
                 {
-                    LogReceived?.Invoke(this, "Error: Kometa executable not found.");
+                    LogReceived?.Invoke(this, "Kometa is not installed. Please install it first using the Install button.");
                     return false;
                 }
 
-                LogReceived?.Invoke(this, "Starting Kometa execution...");
-                LogReceived?.Invoke(this, $"Kometa Path: {kometaPath}");
+                if (!installStatus.IsVirtualEnvironmentReady)
+                {
+                    LogReceived?.Invoke(this, "Virtual environment is not ready. Please reinstall Kometa.");
+                    return false;
+                }
+
+                if (!installStatus.AreDependenciesInstalled)
+                {
+                    LogReceived?.Invoke(this, "Dependencies are not installed. Please reinstall Kometa.");
+                    return false;
+                }
+
+                // Use virtual environment Python
+                var venvPython = Path.Combine(profile.KometaDirectory, "kometa-venv", "Scripts", "python.exe");
+                var kometaScript = Path.Combine(profile.KometaDirectory, "kometa.py");
+
+                if (!File.Exists(venvPython))
+                {
+                    LogReceived?.Invoke(this, "Virtual environment Python not found.");
+                    return false;
+                }
+
+                if (!File.Exists(kometaScript))
+                {
+                    LogReceived?.Invoke(this, "Kometa script not found.");
+                    return false;
+                }
+
+                LogReceived?.Invoke(this, "Starting Kometa execution with 3-step process...");
+                LogReceived?.Invoke(this, $"Virtual Environment: {Path.Combine(profile.KometaDirectory, "kometa-venv")}");
+                LogReceived?.Invoke(this, $"Kometa Script: {kometaScript}");
                 LogReceived?.Invoke(this, $"Config Path: {configPath}");
+                LogReceived?.Invoke(this, $"Working Directory: {profile.KometaDirectory}");
                 LogReceived?.Invoke(this, "=====================================");
+                LogReceived?.Invoke(this, "Step 1: Activating virtual environment...");
+                LogReceived?.Invoke(this, "Step 2: Installing/updating requirements...");
+                LogReceived?.Invoke(this, "Step 3: Running Kometa...");
+                LogReceived?.Invoke(this, "=====================================");
+
+                // Build the 3-step command sequence as requested:
+                // 1. .\kometa-venv\Scripts\activate
+                // 2. python -m pip install -r requirements.txt  
+                // 3. python kometa.py -r
+                var commandSequence = new StringBuilder();
+                commandSequence.Append($"cd /d \"{profile.KometaDirectory}\" && ");
+                commandSequence.Append(".\\kometa-venv\\Scripts\\activate && ");
+                commandSequence.Append("python -m pip install -r requirements.txt && ");
+                commandSequence.Append("python kometa.py -r");
 
                 var startInfo = new ProcessStartInfo
                 {
-                    FileName = kometaPath,
-                    Arguments = $"--config \"{configPath}\"",
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{commandSequence}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
                     WorkingDirectory = profile.KometaDirectory
                 };
-
-                // Add Python path if using .py file
-                if (kometaPath.EndsWith(".py"))
-                {
-                    startInfo.FileName = "python";
-                    startInfo.Arguments = $"\"{kometaPath}\" --config \"{configPath}\"";
-                }
 
                 kometaProcess = new Process { StartInfo = startInfo };
 
@@ -66,7 +113,16 @@ namespace KometaGUIv3.Services
                 {
                     if (!string.IsNullOrEmpty(e.Data))
                     {
-                        LogReceived?.Invoke(this, $"ERROR: {e.Data}");
+                        // Filter out common non-error messages that appear in stderr
+                        var message = e.Data;
+                        if (!message.Contains("UserWarning") && !message.Contains("DeprecationWarning"))
+                        {
+                            LogReceived?.Invoke(this, $"ERROR: {message}");
+                        }
+                        else
+                        {
+                            LogReceived?.Invoke(this, $"WARNING: {message}");
+                        }
                     }
                 };
 
@@ -102,31 +158,6 @@ namespace KometaGUIv3.Services
                     LogReceived?.Invoke(this, $"Error stopping Kometa: {ex.Message}");
                 }
             }
-        }
-
-        private string FindKometaExecutable(string kometaDirectory)
-        {
-            if (string.IsNullOrEmpty(kometaDirectory) || !Directory.Exists(kometaDirectory))
-                return null;
-
-            // Check for common Kometa executable names
-            var possibleExecutables = new[]
-            {
-                Path.Combine(kometaDirectory, "kometa.exe"),
-                Path.Combine(kometaDirectory, "kometa.py"),
-                Path.Combine(kometaDirectory, "main.py"),
-                Path.Combine(kometaDirectory, "plex_meta_manager.py")
-            };
-
-            foreach (var executable in possibleExecutables)
-            {
-                if (File.Exists(executable))
-                {
-                    return executable;
-                }
-            }
-
-            return null;
         }
 
         public bool IsRunning => kometaProcess != null && !kometaProcess.HasExited;
