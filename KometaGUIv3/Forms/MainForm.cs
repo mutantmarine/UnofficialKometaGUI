@@ -114,6 +114,7 @@ namespace KometaGUIv3.Forms
             // Update navigation
             btnBack.Enabled = pageIndex > 0;
             btnNext.Enabled = true; // Will be controlled by page validation
+            btnNext.Text = (pageIndex == pageNames.Length - 1) ? "Finish" : "Next";
             lblCurrentPage.Text = $"{pageNames[pageIndex]} ({pageIndex + 1}/{pageNames.Length})";
             
             // Load appropriate page content
@@ -423,7 +424,6 @@ This guided setup will help you create professional media library configurations
             var finalActionsPage = new FinalActionsPage(currentProfile, profileManager);
             contentPanel.Controls.Add(finalActionsPage);
             btnNext.Enabled = true; // Enable the finish button
-            btnNext.Text = "Finish";
         }
 
         private void ShowComingSoonPage(string pageName, string features)

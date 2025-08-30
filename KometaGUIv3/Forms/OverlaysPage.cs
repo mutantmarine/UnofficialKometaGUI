@@ -19,6 +19,11 @@ namespace KometaGUIv3.Forms
         private Dictionary<string, CheckBox> overlayCheckboxes;
         private Dictionary<string, Button> advancedButtons;
         private const string OVERLAY_IMAGES_PATH = @"Resources\OverlayPreviews\";
+        
+        // Preview image controls (outside of tabs)
+        private PictureBox picMoviePreview1, picMoviePreview2;
+        private PictureBox picTVShowPreview, picTVSeasonPreview, picTVEpisodePreview;
+        private Button btnSelectAll, btnUnselectAll;
 
         public OverlaysPage(KometaProfile profile)
         {
@@ -56,8 +61,14 @@ namespace KometaGUIv3.Forms
                 Location = new Point(30, 55)
             };
 
-            // Tab control for Movies and TV Shows (with preview images inside each tab)
+            // Tab control for Movies and TV Shows (slimmed down)
             SetupTabControl();
+            
+            // Preview images outside of tabs
+            SetupPreviewImages();
+            
+            // Select/Unselect All buttons
+            SetupControlButtons();
 
             this.Controls.AddRange(new Control[] { titleLabel, subtitleLabel });
         }
@@ -67,8 +78,8 @@ namespace KometaGUIv3.Forms
         {
             tabControl = new TabControl
             {
-                Size = new Size(1200, 700),  // Much wider to accommodate preview images
-                Location = new Point(30, 90),  // Moved up since no global preview panel
+                Size = new Size(700, 700),  // Slimmed down width to make room for external previews
+                Location = new Point(30, 90),  
                 BackColor = DarkTheme.BackgroundColor,
                 ForeColor = DarkTheme.TextColor,
                 Font = DarkTheme.GetDefaultFont()
@@ -91,18 +102,18 @@ namespace KometaGUIv3.Forms
             tabControl.TabPages.Add(moviesTab);
             tabControl.TabPages.Add(tvShowsTab);
 
-            // Setup overlays and preview images for each tab
+            // Setup overlays for each tab (no more preview images inside)
             SetupOverlaysForTab(moviesTab, "Movies");
             SetupOverlaysForTab(tvShowsTab, "TV Shows");
+            
+            // Add event handler for tab switching
+            tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
 
             this.Controls.Add(tabControl);
         }
 
         private void SetupOverlaysForTab(TabPage tabPage, string mediaType)
         {
-            // Add preview images to the right side of the tab
-            SetupPreviewImagesInTab(tabPage, mediaType);
-
             var availableOverlays = OverlayDefaults.MediaTypeOverlays[mediaType];
             int yPos = 20;
 
@@ -117,7 +128,7 @@ namespace KometaGUIv3.Forms
                     var checkbox = new CheckBox
                     {
                         Text = overlayInfo.Name,
-                        Size = new Size(200, 25),
+                        Size = new Size(180, 25),  // Slightly smaller for narrower layout
                         Location = new Point(20, yPos),
                         ForeColor = DarkTheme.TextColor,
                         Font = DarkTheme.GetDefaultFont(),
@@ -129,7 +140,7 @@ namespace KometaGUIv3.Forms
                     var descLabel = new Label
                     {
                         Text = overlayInfo.Description,
-                        Size = new Size(300, 40),
+                        Size = new Size(280, 40),  // Adjust for narrower layout
                         Location = new Point(20, yPos + 25),
                         ForeColor = Color.LightGray,
                         Font = new Font("Segoe UI", 9F)
@@ -139,8 +150,8 @@ namespace KometaGUIv3.Forms
                     var posLabel = new Label
                     {
                         Text = $"Positions: {string.Join(", ", overlayInfo.Positions)}",
-                        Size = new Size(200, 20),
-                        Location = new Point(350, yPos + 5),
+                        Size = new Size(160, 20),  // Smaller for narrower layout
+                        Location = new Point(320, yPos + 5),  // Moved left
                         ForeColor = DarkTheme.AccentColor,
                         Font = new Font("Segoe UI", 8F, FontStyle.Bold)
                     };
@@ -154,7 +165,7 @@ namespace KometaGUIv3.Forms
                         {
                             Text = "Advanced",
                             Size = new Size(80, 25),
-                            Location = new Point(570, yPos + 2),
+                            Location = new Point(500, yPos + 2),  // Moved left for narrower layout
                             Font = DarkTheme.GetDefaultFont(),
                             Name = $"btnAdvanced_{overlayKey}",
                             Enabled = false
@@ -181,77 +192,142 @@ namespace KometaGUIv3.Forms
             }
         }
 
-        private void SetupPreviewImagesInTab(TabPage tabPage, string mediaType)
+        private void SetupPreviewImages()
         {
-            // Preview images panel positioned on the right side of the tab
-            var previewPanel = new Panel
+            // Movie preview images (2 total) - 10% larger and positioned left
+            picMoviePreview1 = new PictureBox
             {
-                Size = new Size(600, 320),
-                Location = new Point(580, 20), // Right side of tab
-                BackColor = DarkTheme.BackgroundColor,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            var previewTitle = new Label
-            {
-                Text = $"Overlay Preview - {mediaType}",
-                Font = DarkTheme.GetHeaderFont(),
-                ForeColor = DarkTheme.TextColor,
-                Size = new Size(250, 25),
-                Location = new Point(10, 10)
-            };
-
-            // Three preview images
-            var picPreview1 = new PictureBox
-            {
-                Size = new Size(150, 225),
-                Location = new Point(30, 50),
-                BackColor = Color.Black,
-                BorderStyle = BorderStyle.FixedSingle,
+                Size = new Size(774, 258),  // Another 5% smaller (815->774, 272->258)
+                Location = new Point(680, 104),  // Moved left from 750 to 680
+                BorderStyle = BorderStyle.None,
                 SizeMode = PictureBoxSizeMode.Zoom,
-                Name = $"picPreview1_{mediaType.Replace(" ", "_")}"
+                Name = "picMoviePreview1",
+                Visible = true  // Start with movies visible
             };
 
-            var picPreview2 = new PictureBox
+            picMoviePreview2 = new PictureBox
             {
-                Size = new Size(150, 225),
-                Location = new Point(200, 50),
-                BackColor = Color.Black,
-                BorderStyle = BorderStyle.FixedSingle,
+                Size = new Size(800, 267),  // Resized to fit within window bounds
+                Location = new Point(680, 410),  // Moved left from 750 to 680
+                BorderStyle = BorderStyle.None,
                 SizeMode = PictureBoxSizeMode.Zoom,
-                Name = $"picPreview2_{mediaType.Replace(" ", "_")}"
+                Name = "picMoviePreview2",
+                Visible = true
             };
 
-            var picPreview3 = new PictureBox
+            // TV Show preview images (3 total) - 20% larger and positioned left/down
+            picTVShowPreview = new PictureBox
             {
-                Size = new Size(150, 225),
-                Location = new Point(370, 50),
-                BackColor = Color.Black,
-                BorderStyle = BorderStyle.FixedSingle,
+                Size = new Size(936, 234),  // 20% larger (780->936, 195->234)
+                Location = new Point(544, 79),  // Moved further left to fit within window (680→544)
+                BorderStyle = BorderStyle.None,
                 SizeMode = PictureBoxSizeMode.Zoom,
-                Name = $"picPreview3_{mediaType.Replace(" ", "_")}"
+                Name = "picTVShowPreview",
+                Visible = false
             };
 
-            previewPanel.Controls.AddRange(new Control[] { previewTitle, picPreview1, picPreview2, picPreview3 });
-            tabPage.Controls.Add(previewPanel);
+            picTVSeasonPreview = new PictureBox
+            {
+                Size = new Size(936, 234),  // 20% larger
+                Location = new Point(544, 333),  // Moved further left to fit within window (680→544)
+                BorderStyle = BorderStyle.None,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Name = "picTVSeasonPreview",
+                Visible = false
+            };
 
-            // Load preview images for this media type
-            LoadPreviewImagesInTab(picPreview1, picPreview2, picPreview3, mediaType);
+            picTVEpisodePreview = new PictureBox
+            {
+                Size = new Size(936, 234),  // 20% larger
+                Location = new Point(544, 587),  // Moved further left to fit within window (680→544)
+                BorderStyle = BorderStyle.None,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Name = "picTVEpisodePreview",
+                Visible = false
+            };
+
+            // Add all preview controls to main form
+            this.Controls.AddRange(new Control[] { 
+                picMoviePreview1, picMoviePreview2,
+                picTVShowPreview, picTVSeasonPreview, picTVEpisodePreview 
+            });
+
+            // Load the preview images
+            LoadPreviewImages();
+        }
+        
+        private void SetupControlButtons()
+        {
+            // Select All button
+            btnSelectAll = new Button
+            {
+                Text = "Select All on Current Tab",
+                Size = new Size(180, 35),
+                Location = new Point(30, 800),
+                Name = "btnPrimary"
+            };
+            
+            // Unselect All button
+            btnUnselectAll = new Button
+            {
+                Text = "Unselect All on Current Tab", 
+                Size = new Size(180, 35),
+                Location = new Point(220, 800)
+            };
+            
+            // Add event handlers
+            btnSelectAll.Click += BtnSelectAll_Click;
+            btnUnselectAll.Click += BtnUnselectAll_Click;
+            
+            // Add buttons to form
+            this.Controls.AddRange(new Control[] { btnSelectAll, btnUnselectAll });
         }
 
-        private void LoadPreviewImagesInTab(PictureBox pic1, PictureBox pic2, PictureBox pic3, string mediaType)
+        private void LoadPreviewImages()
         {
             try
             {
-                string suffix = mediaType == "Movies" ? "movie" : "show";
+                // Load movie preview images
+                LoadImageIntoPictureBox(picMoviePreview1, "movie_overlay_preview_1.webp");
+                LoadImageIntoPictureBox(picMoviePreview2, "movie_overlay_preview_2.webp");
                 
-                LoadImageIntoPictureBox(pic1, $"overlay_preview_{suffix}_1.png");
-                LoadImageIntoPictureBox(pic2, $"overlay_preview_{suffix}_2.png");
-                LoadImageIntoPictureBox(pic3, $"overlay_preview_{suffix}_3.png");
+                // Load TV show preview images
+                LoadImageIntoPictureBox(picTVShowPreview, "tvshows_show_overlay_preview.webp");
+                LoadImageIntoPictureBox(picTVSeasonPreview, "tvshows_season_overlay_preview.webp");
+                LoadImageIntoPictureBox(picTVEpisodePreview, "tvshows_episode_overlay_preview.webp");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading preview images for {mediaType}: {ex.Message}");
+                Console.WriteLine($"Error loading preview images: {ex.Message}");
+            }
+        }
+        
+        private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabControl.SelectedTab != null)
+            {
+                string selectedTabText = tabControl.SelectedTab.Text;
+                
+                if (selectedTabText == "Movies")
+                {
+                    // Show movie previews, hide TV show previews
+                    picMoviePreview1.Visible = true;
+                    picMoviePreview2.Visible = true;
+                    
+                    picTVShowPreview.Visible = false;
+                    picTVSeasonPreview.Visible = false;
+                    picTVEpisodePreview.Visible = false;
+                }
+                else if (selectedTabText == "TV Shows")
+                {
+                    // Hide movie previews, show TV show previews
+                    picMoviePreview1.Visible = false;
+                    picMoviePreview2.Visible = false;
+                    
+                    picTVShowPreview.Visible = true;
+                    picTVSeasonPreview.Visible = true;
+                    picTVEpisodePreview.Visible = true;
+                }
             }
         }
 
@@ -443,20 +519,25 @@ namespace KometaGUIv3.Forms
                 }
                 else
                 {
-                    // Create a placeholder image if file doesn't exist
-                    var placeholder = new Bitmap(180, 270);
-                    using (var g = Graphics.FromImage(placeholder))
-                    {
-                        g.Clear(Color.DarkGray);
-                        g.DrawString("No Preview", new Font("Arial", 12), Brushes.White, 10, 120);
-                    }
-                    pictureBox.Image = placeholder;
+                    CreatePlaceholderImage(pictureBox, "No Preview");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading image {fileName}: {ex.Message}");
+                CreatePlaceholderImage(pictureBox, "Error Loading");
             }
+        }
+
+        private void CreatePlaceholderImage(PictureBox pictureBox, string text)
+        {
+            var placeholder = new Bitmap(600, 200);  // Match new larger size
+            using (var g = Graphics.FromImage(placeholder))
+            {
+                g.Clear(Color.DarkGray);
+                g.DrawString(text, new Font("Arial", 14), Brushes.White, 250, 90);  // Centered for larger image
+            }
+            pictureBox.Image = placeholder;
         }
 
         private void LoadProfileData()
@@ -467,6 +548,58 @@ namespace KometaGUIv3.Forms
                 if (overlayCheckboxes.ContainsKey(setting.Key))
                 {
                     overlayCheckboxes[setting.Key].Checked = setting.Value.IsEnabled;
+                }
+            }
+        }
+
+        private void BtnSelectAll_Click(object sender, EventArgs e)
+        {
+            if (tabControl.SelectedTab != null)
+            {
+                SetAllCheckboxes(tabControl.SelectedTab, true);
+            }
+        }
+
+        private void BtnUnselectAll_Click(object sender, EventArgs e)
+        {
+            if (tabControl.SelectedTab != null)
+            {
+                SetAllCheckboxes(tabControl.SelectedTab, false);
+            }
+        }
+
+        private void SetAllCheckboxes(TabPage tabPage, bool isChecked)
+        {
+            // Find all checkboxes in the current tab
+            var checkboxes = new List<CheckBox>();
+            FindCheckboxes(tabPage, checkboxes);
+            
+            foreach (var checkBox in checkboxes)
+            {
+                if (checkBox.Name.StartsWith("chk_"))
+                {
+                    // Temporarily disable event to avoid multiple firings
+                    checkBox.CheckedChanged -= OverlayCheckBox_CheckedChanged;
+                    checkBox.Checked = isChecked;
+                    checkBox.CheckedChanged += OverlayCheckBox_CheckedChanged;
+                    
+                    // Manually trigger the event to update the profile
+                    OverlayCheckBox_CheckedChanged(checkBox, EventArgs.Empty);
+                }
+            }
+        }
+        
+        private void FindCheckboxes(Control parent, List<CheckBox> checkboxes)
+        {
+            foreach (Control control in parent.Controls)
+            {
+                if (control is CheckBox checkbox)
+                {
+                    checkboxes.Add(checkbox);
+                }
+                else if (control.HasChildren)
+                {
+                    FindCheckboxes(control, checkboxes);
                 }
             }
         }
