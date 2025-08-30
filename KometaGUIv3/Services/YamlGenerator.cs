@@ -56,6 +56,10 @@ namespace KometaGUIv3.Services
                     sb.AppendLine($"  {libraryName}:");
                     sb.AppendLine("    remove_overlays: false");
                     
+                    // Determine library type (Movies or TV Shows)
+                    var library = profile.Plex.AvailableLibraries.FirstOrDefault(l => l.Name == libraryName);
+                    string libraryType = GetLibraryMediaType(library?.Type);
+                    
                     // Add collection files only if there are selected charts
                     var enabledCharts = profile.SelectedCharts.Where(c => c.Value).ToList();
                     if (enabledCharts.Count > 0)
@@ -67,41 +71,54 @@ namespace KometaGUIv3.Services
                         }
                     }
                     
-                    // Add overlay files only if there are enabled overlays
-                    var enabledOverlays = profile.OverlaySettings.Where(o => o.Value.IsEnabled).ToList();
-                    if (enabledOverlays.Count > 0)
+                    // Add overlay files only if there are overlays where main checkbox is enabled for this library type
+                    var relevantOverlays = profile.OverlaySettings.Where(o => 
+                        o.Value.IsEnabled && 
+                        IsOverlayForLibraryType(o.Key, libraryType)).ToList();
+                    
+                    if (relevantOverlays.Count > 0)
                     {
                         sb.AppendLine("    overlay_files:");
-                        foreach (var overlay in enabledOverlays)
+                        var processedOverlays = new HashSet<string>(); // Track processed overlays to prevent duplicates
+                        foreach (var overlay in relevantOverlays)
                         {
                             // Use only the base overlay type, not the full key with media type and builder level
                             var overlayName = overlay.Value.OverlayType;
-                            sb.AppendLine($"      - default: {overlayName}");
                             
-                            // Only add template_variables if there are actual customizations
-                            bool hasCustomizations = overlay.Value.TemplateVariables.Count > 0;
-                            bool hasNonDefaultBuilderLevel = !string.IsNullOrEmpty(overlay.Value.BuilderLevel) && overlay.Value.BuilderLevel != "show";
-                            
-                            if (hasCustomizations || hasNonDefaultBuilderLevel)
+                            // Clean overlay name - remove any lingering _TV or _Movie suffixes from legacy data
+                            if (overlayName.EndsWith("_TV"))
                             {
-                                sb.AppendLine("        template_variables:");
-                                
-                                // Add template variables first
-                                foreach (var templateVar in overlay.Value.TemplateVariables)
+                                overlayName = overlayName.Substring(0, overlayName.Length - "_TV".Length);
+                            }
+                            else if (overlayName.EndsWith("_Movie") || overlayName.EndsWith("_Movies"))
+                            {
+                                overlayName = overlayName.EndsWith("_Movies") 
+                                    ? overlayName.Substring(0, overlayName.Length - "_Movies".Length)
+                                    : overlayName.Substring(0, overlayName.Length - "_Movie".Length);
+                            }
+                            
+                            // Get the overlay info to check supported levels
+                            OverlayInfo overlayInfo = null;
+                            if (OverlayDefaults.AllOverlays.ContainsKey(overlayName))
+                            {
+                                overlayInfo = OverlayDefaults.AllOverlays[overlayName];
+                            }
+                            
+                            // Generate overlay entries based on configuration
+                            if (overlay.Value.IsEnabled)
+                            {
+                                // Create a unique key for this overlay configuration to prevent duplicates
+                                var configKey = $"{overlayName}_{string.Join(",", overlay.Value.TemplateVariables.Keys.OrderBy(k => k))}";
+                                if (!processedOverlays.Contains(configKey))
                                 {
-                                    sb.AppendLine($"          {templateVar.Key}: {templateVar.Value}");
-                                }
-                                
-                                // Add builder level last if it's non-default
-                                if (hasNonDefaultBuilderLevel)
-                                {
-                                    sb.AppendLine($"          builder_level: {overlay.Value.BuilderLevel}");
+                                    processedOverlays.Add(configKey);
+                                    GenerateSimpleOverlayEntries(sb, overlay.Value, overlayName);
                                 }
                             }
                         }
                         
                         // Add operations section if needed for rating overlays
-                        AddOperationsSection(sb, libraryName, enabledOverlays);
+                        AddOperationsSection(sb, libraryName, relevantOverlays);
                     }
                     
                     sb.AppendLine();
@@ -163,6 +180,130 @@ namespace KometaGUIv3.Services
             return sb.ToString();
         }
 
+        private string GetLibraryMediaType(string plexLibraryType)
+        {
+            if (string.IsNullOrEmpty(plexLibraryType))
+                return "Movies"; // Default fallback
+                
+            // Convert Plex library types to our media types
+            switch (plexLibraryType.ToLower())
+            {
+                case "movie":
+                    return "Movies";
+                case "show":
+                    return "TV Shows";
+                default:
+                    return "Movies"; // Default to Movies for unknown types
+            }
+        }
+
+        private void GenerateSimpleOverlayEntries(StringBuilder sb, OverlayConfiguration overlayConfig, string overlayName)
+        {
+            if (overlayConfig.TemplateVariables.ContainsKey("builder_levels"))
+            {
+                // Multi-level overlay: generate one entry per builder level
+                var builderLevelsObj = overlayConfig.TemplateVariables["builder_levels"];
+                List<string> levels;
+                
+                if (builderLevelsObj is List<string> levelsList)
+                {
+                    levels = levelsList;
+                }
+                else
+                {
+                    // Fallback: try to parse as comma-separated string
+                    levels = builderLevelsObj.ToString().Split(',').Select(l => l.Trim()).ToList();
+                }
+                
+                foreach (var level in levels)
+                {
+                    var trimmedLevel = level.Trim();
+                    sb.AppendLine($"      - default: {overlayName}");
+                    
+                    if (trimmedLevel != "show")
+                    {
+                        sb.AppendLine("        template_variables:");
+                        sb.AppendLine($"          builder_level: {trimmedLevel}");
+                        
+                        // Add other template variables for non-show levels (like ratings)
+                        foreach (var templateVar in overlayConfig.TemplateVariables)
+                        {
+                            if (templateVar.Key != "builder_levels")
+                            {
+                                var formattedValue = FormatYamlValue(templateVar.Value);
+                                sb.AppendLine($"          {templateVar.Key}: {formattedValue}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Show level: add other template variables without builder_level
+                        if (overlayConfig.TemplateVariables.Count > 1) // More than just builder_levels
+                        {
+                            sb.AppendLine("        template_variables:");
+                            foreach (var templateVar in overlayConfig.TemplateVariables)
+                            {
+                                if (templateVar.Key != "builder_levels")
+                                {
+                                    var formattedValue = FormatYamlValue(templateVar.Value);
+                                    sb.AppendLine($"          {templateVar.Key}: {formattedValue}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Single entry
+                sb.AppendLine($"      - default: {overlayName}");
+                
+                if (overlayConfig.TemplateVariables.Count > 0)
+                {
+                    sb.AppendLine("        template_variables:");
+                    foreach (var templateVar in overlayConfig.TemplateVariables)
+                    {
+                        var formattedValue = FormatYamlValue(templateVar.Value);
+                        sb.AppendLine($"          {templateVar.Key}: {formattedValue}");
+                    }
+                }
+            }
+        }
+
+        private string FormatYamlValue(object value)
+        {
+            if (value == null)
+                return "null";
+                
+            if (value is string stringValue)
+                return stringValue;
+                
+            if (value is bool boolValue)
+                return boolValue.ToString().ToLower();
+                
+            if (value is int || value is long || value is double || value is float)
+                return value.ToString();
+                
+            if (value is List<string> listValue)
+            {
+                // List<string> should not be serialized as template variables
+                // Return empty string to prevent YAML corruption
+                return "";
+            }
+                
+            // Fallback for other types
+            return value.ToString();
+        }
+
+        private bool IsOverlayForLibraryType(string overlayKey, string libraryType)
+        {
+            // Overlay keys are in format: "overlayId_MediaType" (e.g., "resolution_Movies", "audio_codec_TV_Shows")
+            // Convert library type to underscore format to match how overlays are stored
+            var normalizedLibraryType = libraryType.Replace(" ", "_");
+            var expectedSuffix = $"_{normalizedLibraryType}";
+            return overlayKey.EndsWith(expectedSuffix, StringComparison.OrdinalIgnoreCase);
+        }
+
         private void AddOptionalServices(StringBuilder sb, KometaProfile profile)
         {
             // Only add services that are enabled
@@ -216,13 +357,13 @@ namespace KometaGUIv3.Services
             }
         }
 
-        private void AddOperationsSection(StringBuilder sb, string libraryName, List<KeyValuePair<string, OverlayConfiguration>> enabledOverlays)
+        private void AddOperationsSection(StringBuilder sb, string libraryName, List<KeyValuePair<string, OverlayConfiguration>> relevantOverlays)
         {
             var operations = new List<string>();
             
-            // Check for rating overlays and determine operations needed
-            var ratingOverlay = enabledOverlays.FirstOrDefault(o => o.Key == "ratings");
-            if (ratingOverlay.Value != null)
+            // Check for rating overlays and determine operations needed - only if advanced variables are enabled
+            var ratingOverlay = relevantOverlays.FirstOrDefault(o => o.Key.Contains("ratings"));
+            if (ratingOverlay.Value != null && ratingOverlay.Value.UseAdvancedVariables)
             {
                 var builderLevel = ratingOverlay.Value.BuilderLevel ?? "show";
                 

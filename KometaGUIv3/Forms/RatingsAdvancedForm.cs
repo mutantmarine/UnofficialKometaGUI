@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using KometaGUIv3.Models;
 using KometaGUIv3.Utils;
@@ -12,6 +14,7 @@ namespace KometaGUIv3.Forms
         private KometaProfile profile;
         private OverlayConfiguration overlayConfig;
         private string overlayKey;
+        private string mediaType;
 
         // Main controls
         private CheckBox chkEnableOverlay;
@@ -43,14 +46,18 @@ namespace KometaGUIv3.Forms
         // Position controls
         private ComboBox cmbPosition;
         
+        // Builder Level controls (TV Shows only)
+        private CheckBox chkShowLevel, chkSeasonLevel, chkEpisodeLevel;
+        
         // Dialog buttons
         private Button btnOK, btnCancel;
 
-        public RatingsAdvancedForm(KometaProfile profile, OverlayConfiguration overlayConfig, string overlayKey)
+        public RatingsAdvancedForm(KometaProfile profile, OverlayConfiguration overlayConfig, string overlayKey, string mediaType)
         {
             this.profile = profile;
             this.overlayConfig = overlayConfig;
             this.overlayKey = overlayKey;
+            this.mediaType = mediaType;
             
             InitializeComponent();
             SetupControls();
@@ -60,7 +67,8 @@ namespace KometaGUIv3.Forms
         private void InitializeComponent()
         {
             this.Text = "Advanced Ratings Configuration";
-            this.Size = new Size(600, 550);
+            // Set initial size - will be adjusted dynamically in SetupControls()
+            this.Size = new Size(600, 400);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -126,6 +134,53 @@ namespace KometaGUIv3.Forms
             this.Controls.AddRange(new Control[] { lblPosition, cmbPosition });
             yPos += 40;
 
+            // Builder Level Section (TV Shows only)
+            if (mediaType == "TV Shows")
+            {
+                var lblBuilderLevel = new Label
+                {
+                    Text = "Builder Level:",
+                    Size = new Size(150, 25),
+                    Location = new Point(20, yPos),
+                    Font = DarkTheme.GetDefaultFont(),
+                    ForeColor = DarkTheme.TextColor
+                };
+
+                chkShowLevel = new CheckBox
+                {
+                    Text = "Show",
+                    Size = new Size(70, 25),
+                    Location = new Point(180, yPos),
+                    Font = DarkTheme.GetDefaultFont(),
+                    ForeColor = DarkTheme.TextColor,
+                    Checked = true, // Default to show level
+                    Enabled = false // Initially disabled
+                };
+
+                chkSeasonLevel = new CheckBox
+                {
+                    Text = "Season",
+                    Size = new Size(80, 25),
+                    Location = new Point(260, yPos),
+                    Font = DarkTheme.GetDefaultFont(),
+                    ForeColor = DarkTheme.TextColor,
+                    Enabled = false // Initially disabled
+                };
+
+                chkEpisodeLevel = new CheckBox
+                {
+                    Text = "Episode",
+                    Size = new Size(80, 25),
+                    Location = new Point(350, yPos),
+                    Font = DarkTheme.GetDefaultFont(),
+                    ForeColor = DarkTheme.TextColor,
+                    Enabled = false // Initially disabled
+                };
+
+                this.Controls.AddRange(new Control[] { lblBuilderLevel, chkShowLevel, chkSeasonLevel, chkEpisodeLevel });
+                yPos += 40;
+            }
+
             // Dialog buttons
             btnCancel = new Button
             {
@@ -149,6 +204,15 @@ namespace KometaGUIv3.Forms
             this.Controls.AddRange(new Control[] { btnCancel, btnOK });
             this.AcceptButton = btnOK;
             this.CancelButton = btnCancel;
+
+            // Calculate required form height dynamically based on final button position
+            int buttonHeight = 35;
+            int bottomPadding = 20; // Space below buttons
+            int titleBarAndBorderHeight = 50; // Approximate height for form chrome
+            int requiredHeight = yPos + buttonHeight + bottomPadding + titleBarAndBorderHeight;
+            
+            // Set the form size with calculated height
+            this.Size = new Size(600, requiredHeight);
 
             // Apply dark theme to all controls
             DarkTheme.ApplyDarkTheme(this);
@@ -277,6 +341,14 @@ namespace KometaGUIv3.Forms
             // Enable/disable position dropdown
             cmbPosition.Enabled = enabled;
             
+            // Enable/disable builder level checkboxes (TV Shows only)
+            if (mediaType == "TV Shows")
+            {
+                if (chkShowLevel != null) chkShowLevel.Enabled = enabled;
+                if (chkSeasonLevel != null) chkSeasonLevel.Enabled = enabled;
+                if (chkEpisodeLevel != null) chkEpisodeLevel.Enabled = enabled;
+            }
+            
             // If disabling main checkbox, uncheck and disable all sub-controls
             if (!enabled)
             {
@@ -356,7 +428,8 @@ namespace KometaGUIv3.Forms
             // Load existing configuration from overlay config
             var ratingConfig = overlayConfig.RatingConfig;
             
-            chkEnableOverlay.Checked = ratingConfig.EnableOverlay;
+            // Use UseAdvancedVariables instead of RatingConfig.EnableOverlay for consistency
+            chkEnableOverlay.Checked = overlayConfig.UseAdvancedVariables;
             
             // User Rating
             chkUserRating.Checked = ratingConfig.UserRating.IsEnabled;
@@ -387,44 +460,101 @@ namespace KometaGUIv3.Forms
                 cmbPosition.SelectedItem = "Left";
             else
                 cmbPosition.SelectedItem = "Right";
+                
+            // Builder Level (TV Shows only)
+            if (mediaType == "TV Shows")
+            {
+                // Parse builder level(s) from configuration
+                var builderLevel = overlayConfig.BuilderLevel?.ToLower() ?? "show";
+                var builderLevels = builderLevel.Split(',').Select(level => level.Trim()).ToArray();
+                
+                // Set checkboxes based on stored builder levels
+                if (chkShowLevel != null) chkShowLevel.Checked = builderLevels.Contains("show");
+                if (chkSeasonLevel != null) chkSeasonLevel.Checked = builderLevels.Contains("season");
+                if (chkEpisodeLevel != null) chkEpisodeLevel.Checked = builderLevels.Contains("episode");
+                
+                // Ensure at least one level is selected (default to show if none found)
+                if (!chkShowLevel.Checked && !chkSeasonLevel.Checked && !chkEpisodeLevel.Checked)
+                {
+                    chkShowLevel.Checked = true;
+                }
+            }
         }
 
         private void BtnOK_Click(object sender, EventArgs e)
         {
-            // Save configuration back to overlay config
-            var ratingConfig = overlayConfig.RatingConfig;
+            // Clear and populate template variables based on form settings
+            overlayConfig.TemplateVariables.Clear();
+            overlayConfig.UseAdvancedVariables = chkEnableOverlay.Checked;
             
-            ratingConfig.EnableOverlay = chkEnableOverlay.Checked;
-            
-            // User Rating
-            ratingConfig.UserRating.IsEnabled = chkUserRating.Checked;
-            ratingConfig.UserRating.Source = cmbUserSource.SelectedItem?.ToString() ?? "rt_tomato";
-            ratingConfig.UserRating.FontSize = trkUserFontSize.Value;
-            if (lblUserFontPath.Text != "No font selected")
-                ratingConfig.UserRating.CustomFont = lblUserFontPath.Text;
+            if (chkEnableOverlay.Checked)
+            {
+                int ratingIndex = 1;
+                
+                // User Rating
+                if (chkUserRating.Checked)
+                {
+                    var userSource = cmbUserSource.SelectedItem?.ToString() ?? "rt_tomato";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}"] = "user";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_image"] = userSource;
+                    if (lblUserFontPath.Text != "No font selected")
+                        overlayConfig.TemplateVariables[$"rating{ratingIndex}_font"] = lblUserFontPath.Text;
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_font_size"] = trkUserFontSize.Value;
+                    ratingIndex++;
+                }
 
-            // Critic Rating
-            ratingConfig.CriticRating.IsEnabled = chkCriticRating.Checked;
-            ratingConfig.CriticRating.Source = cmbCriticSource.SelectedItem?.ToString() ?? "imdb";
-            ratingConfig.CriticRating.FontSize = trkCriticFontSize.Value;
-            if (lblCriticFontPath.Text != "No font selected")
-                ratingConfig.CriticRating.CustomFont = lblCriticFontPath.Text;
+                // Critic Rating
+                if (chkCriticRating.Checked)
+                {
+                    var criticSource = cmbCriticSource.SelectedItem?.ToString() ?? "imdb";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}"] = "critic";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_image"] = criticSource;
+                    if (lblCriticFontPath.Text != "No font selected")
+                        overlayConfig.TemplateVariables[$"rating{ratingIndex}_font"] = lblCriticFontPath.Text;
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_font_size"] = trkCriticFontSize.Value;
+                    ratingIndex++;
+                }
 
-            // Audience Rating
-            ratingConfig.AudienceRating.IsEnabled = chkAudienceRating.Checked;
-            ratingConfig.AudienceRating.Source = cmbAudienceSource.SelectedItem?.ToString() ?? "tmdb";
-            ratingConfig.AudienceRating.FontSize = trkAudienceFontSize.Value;
-            if (lblAudienceFontPath.Text != "No font selected")
-                ratingConfig.AudienceRating.CustomFont = lblAudienceFontPath.Text;
+                // Audience Rating
+                if (chkAudienceRating.Checked)
+                {
+                    var audienceSource = cmbAudienceSource.SelectedItem?.ToString() ?? "tmdb";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}"] = "audience";
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_image"] = audienceSource;
+                    if (lblAudienceFontPath.Text != "No font selected")
+                        overlayConfig.TemplateVariables[$"rating{ratingIndex}_font"] = lblAudienceFontPath.Text;
+                    overlayConfig.TemplateVariables[$"rating{ratingIndex}_font_size"] = trkAudienceFontSize.Value;
+                }
 
-            // Position
-            ratingConfig.HorizontalPosition = cmbPosition.SelectedItem?.ToString()?.ToLower() ?? "right";
+                // Position
+                var position = cmbPosition.SelectedItem?.ToString()?.ToLower() ?? "right";
+                overlayConfig.TemplateVariables["horizontal_position"] = position;
+                
+                // Builder levels for TV Shows
+                if (mediaType == "TV Shows")
+                {
+                    var selectedLevels = new List<string>();
+                    
+                    if (chkShowLevel != null && chkShowLevel.Checked)
+                        selectedLevels.Add("show");
+                    if (chkSeasonLevel != null && chkSeasonLevel.Checked)
+                        selectedLevels.Add("season");
+                    if (chkEpisodeLevel != null && chkEpisodeLevel.Checked)
+                        selectedLevels.Add("episode");
+                    
+                    if (selectedLevels.Count == 0)
+                    {
+                        MessageBox.Show("Please select at least one builder level (Show, Season, or Episode).", 
+                            "Builder Level Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    
+                    overlayConfig.TemplateVariables["builder_levels"] = string.Join(",", selectedLevels);
+                }
+            }
             
-            // Update the main overlay enabled state based on whether overlay is enabled
-            overlayConfig.IsEnabled = ratingConfig.EnableOverlay;
-            
-            // Save to profile
-            profile.OverlaySettings[overlayKey] = overlayConfig;
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
     }
 }

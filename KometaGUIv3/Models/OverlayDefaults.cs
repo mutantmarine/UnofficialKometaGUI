@@ -12,7 +12,7 @@ namespace KometaGUIv3.Models
             ["audio_codec"] = new OverlayInfo("audio_codec", "Audio Codec", "FLAC, DTS-X, TrueHD, AAC", 
                 new[] { 2 }, new[] { "show", "season", "episode" }, "Top right area"),
             ["video_format"] = new OverlayInfo("video_format", "Video Format", "Remux, Blu-Ray, DVD", 
-                new[] { 9 }, new[] { "show", "season", "episode" }, "Bottom left"),
+                new[] { 9, 8 }, new[] { "show", "season", "episode" }, "Bottom left / Center positioning"),
             ["aspect"] = new OverlayInfo("aspect", "Aspect Ratio", "Widescreen, standard ratios", 
                 new[] { 1 }, new[] { "show" }, "Top positioning"),
             ["languages"] = new OverlayInfo("languages", "Languages", "Available audio languages", 
@@ -22,7 +22,7 @@ namespace KometaGUIv3.Models
 
             // Ratings & Content
             ["ratings"] = new OverlayInfo("ratings", "Ratings", "Multi-rating system with custom fonts", 
-                new[] { 5, 6, 7 }, new[] { "show", "episode" }, "Side area with custom positioning"),
+                new[] { 5, 6, 7, 4 }, new[] { "show", "episode" }, "Side area with custom positioning"),
             ["content_rating_us_movie"] = new OverlayInfo("content_rating_us_movie", "US Movie Ratings", "G, PG, PG-13, R ratings", 
                 new[] { 8 }, new[] { "show" }, "Content rating indicator"),
             ["content_rating_us_show"] = new OverlayInfo("content_rating_us_show", "US TV Ratings", "TV-Y, TV-G, TV-PG, TV-14, TV-MA", 
@@ -46,7 +46,7 @@ namespace KometaGUIv3.Models
             ["studio"] = new OverlayInfo("studio", "Studio", "Production studio indicators", 
                 new[] { 8 }, new[] { "show" }, "Studio branding"),
             ["streaming"] = new OverlayInfo("streaming", "Streaming Services", "Netflix, Disney+, HBO Max, etc.", 
-                new[] { 8 }, new[] { "show" }, "Service indicators"),
+                new[] { 8, 7 }, new[] { "show" }, "Service indicators"),
             ["versions"] = new OverlayInfo("versions", "Versions", "Duplicate media indicators", 
                 new[] { 11 }, new[] { "show", "episode" }, "Version indicators"),
             ["status"] = new OverlayInfo("status", "Status", "Airing, Returning, Ended, Canceled", 
@@ -73,9 +73,11 @@ namespace KometaGUIv3.Models
                 "content_rating_au", "content_rating_de", "content_rating_uk", "content_rating_nz"
             },
             ["TV Shows"] = new[] { 
-                "resolution", "audio_codec", "ratings", "streaming", "video_format", 
-                "ribbon", "episode_info", "runtimes", "network", "status", "versions",
-                "content_rating_us_show"
+                "resolution", "audio_codec", "aspect", "ratings", "streaming", "video_format",
+                "languages", "language_count", "ribbon", "episode_info", "runtimes", 
+                "network", "studio", "status", "versions", "direct_play", "mediastinger",
+                "content_rating_us_show", "content_rating_au", "content_rating_de", 
+                "content_rating_uk", "content_rating_nz", "commonsense"
             }
         };
 

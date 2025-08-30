@@ -198,7 +198,8 @@ namespace KometaGUIv3.Models
         public string OverlayType { get; set; }
         public string BuilderLevel { get; set; }
         public Dictionary<string, object> TemplateVariables { get; set; }
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } // Controls basic overlay inclusion in YAML
+        public bool UseAdvancedVariables { get; set; } // Controls template_variables usage
         public RatingSettings RatingConfig { get; set; }
 
         public OverlayConfiguration()
@@ -207,6 +208,7 @@ namespace KometaGUIv3.Models
             BuilderLevel = "show";
             TemplateVariables = new Dictionary<string, object>();
             IsEnabled = false;
+            UseAdvancedVariables = false;
             RatingConfig = new RatingSettings();
         }
     }
