@@ -168,6 +168,176 @@ namespace KometaGUIv3.Forms
                 Location = new Point(40, y + 20)
             };
 
+            var controls = new List<Control> { enableCheckbox, nameLabel, descLabel };
+
+            // Special handling for Trakt - show all fields on main page
+            if (serviceId == "trakt")
+            {
+                return CreateTraktServiceRow(parent, controls, y);
+            }
+            // Special handling for MAL - show Client ID/Secret on main page, keep Advanced button  
+            else if (serviceId == "mal")
+            {
+                return CreateMalServiceRow(parent, controls, config, y);
+            }
+            else
+            {
+                return CreateStandardServiceRow(parent, controls, serviceId, config, y);
+            }
+        }
+
+        private int CreateTraktServiceRow(Panel parent, List<Control> controls, int y)
+        {
+            // Client ID field
+            var clientIdLabel = new Label
+            {
+                Text = "Client ID:",
+                Size = new Size(60, 20),
+                Location = new Point(175, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = "trakt_client_id_label"
+            };
+
+            var clientIdTextBox = new TextBox
+            {
+                Size = new Size(150, 25),
+                Location = new Point(240, y - 2),
+                Name = "trakt_client_id",
+                Enabled = false
+            };
+
+            // Client Secret field
+            var clientSecretLabel = new Label
+            {
+                Text = "Secret:",
+                Size = new Size(45, 20),
+                Location = new Point(400, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = "trakt_client_secret_label"
+            };
+
+            var clientSecretTextBox = new TextBox
+            {
+                Size = new Size(150, 25),
+                Location = new Point(450, y - 2),
+                Name = "trakt_client_secret",
+                UseSystemPasswordChar = true,
+                Enabled = false
+            };
+
+            // PIN field
+            var pinLabel = new Label
+            {
+                Text = "PIN:",
+                Size = new Size(30, 20),
+                Location = new Point(610, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = "trakt_pin_label"
+            };
+
+            var pinTextBox = new TextBox
+            {
+                Size = new Size(80, 25),
+                Location = new Point(645, y - 2),
+                Name = "trakt_pin",
+                Enabled = false
+            };
+
+            // API Link button
+            var linkButton = new Button
+            {
+                Text = "Get API Key",
+                Size = new Size(100, 25),
+                Location = new Point(735, y - 2),
+                Name = "trakt_link",
+                Enabled = false
+            };
+            linkButton.Click += (s, e) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://trakt.tv/oauth/applications") { UseShellExecute = true });
+
+            serviceInputs["trakt_client_id"] = clientIdTextBox;
+            serviceInputs["trakt_client_secret"] = clientSecretTextBox;
+            serviceInputs["trakt_pin"] = pinTextBox;
+
+            controls.AddRange(new Control[] { clientIdLabel, clientIdTextBox, clientSecretLabel, clientSecretTextBox, pinLabel, pinTextBox, linkButton });
+            parent.Controls.AddRange(controls.ToArray());
+
+            UpdateServiceControlsState("trakt", false);
+            return y + 50;
+        }
+
+        private int CreateMalServiceRow(Panel parent, List<Control> controls, ServiceConfig config, int y)
+        {
+            // Client ID field
+            var clientIdLabel = new Label
+            {
+                Text = "Client ID:",
+                Size = new Size(60, 20),
+                Location = new Point(175, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = "mal_client_id_label"
+            };
+
+            var clientIdTextBox = new TextBox
+            {
+                Size = new Size(150, 25),
+                Location = new Point(240, y - 2),
+                Name = "mal_client_id",
+                Enabled = false
+            };
+
+            // Client Secret field
+            var clientSecretLabel = new Label
+            {
+                Text = "Secret:",
+                Size = new Size(45, 20),
+                Location = new Point(400, y),
+                ForeColor = DarkTheme.TextColor,
+                Name = "mal_client_secret_label"
+            };
+
+            var clientSecretTextBox = new TextBox
+            {
+                Size = new Size(150, 25),
+                Location = new Point(450, y - 2),
+                Name = "mal_client_secret",
+                UseSystemPasswordChar = true,
+                Enabled = false
+            };
+
+            // API Link button
+            var linkButton = new Button
+            {
+                Text = "Get API Key",
+                Size = new Size(100, 25),
+                Location = new Point(610, y - 2),
+                Name = "mal_link",
+                Enabled = false
+            };
+            linkButton.Click += (s, e) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(config.ApiUrl) { UseShellExecute = true });
+
+            // Advanced button (for cache expiration and localhost URL)
+            var advancedButton = new Button
+            {
+                Text = "Advanced...",
+                Size = new Size(80, 25),
+                Location = new Point(720, y - 2),
+                Name = "mal_advanced",
+                Enabled = false
+            };
+            advancedButton.Click += (s, e) => ShowAdvancedConfig("mal", config.Name);
+
+            serviceInputs["mal_client_id"] = clientIdTextBox;
+            serviceInputs["mal_client_secret"] = clientSecretTextBox;
+
+            controls.AddRange(new Control[] { clientIdLabel, clientIdTextBox, clientSecretLabel, clientSecretTextBox, linkButton, advancedButton });
+            parent.Controls.AddRange(controls.ToArray());
+
+            UpdateServiceControlsState("mal", false);
+            return y + 50;
+        }
+
+        private int CreateStandardServiceRow(Panel parent, List<Control> controls, string serviceId, ServiceConfig config, int y)
+        {
             // URL field (for local services) - shifted right
             if (config.IsLocal)
             {
@@ -190,7 +360,7 @@ namespace KometaGUIv3.Forms
                 };
                 
                 serviceInputs[$"{serviceId}_url"] = urlTextBox;
-                parent.Controls.AddRange(new Control[] { urlLabel, urlTextBox });
+                controls.AddRange(new Control[] { urlLabel, urlTextBox });
             }
 
             // API Key/Token field - shifted right
@@ -213,12 +383,12 @@ namespace KometaGUIv3.Forms
             };
 
             serviceInputs[$"{serviceId}_key"] = keyTextBox;
+            controls.AddRange(new Control[] { keyLabel, keyTextBox });
 
             // API Link button (for API services) - shifted right
-            Button linkButton = null;
             if (!string.IsNullOrEmpty(config.ApiUrl))
             {
-                linkButton = new Button
+                var linkButton = new Button
                 {
                     Text = "Get API Key",
                     Size = new Size(100, 25),
@@ -228,13 +398,13 @@ namespace KometaGUIv3.Forms
                 };
                 
                 linkButton.Click += (s, e) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(config.ApiUrl) { UseShellExecute = true });
+                controls.Add(linkButton);
             }
 
             // Advanced configuration button (for complex services) - shifted right
-            Button advancedButton = null;
-            if (serviceId == "radarr" || serviceId == "sonarr" || serviceId == "trakt" || serviceId == "mal")
+            if (serviceId == "radarr" || serviceId == "sonarr")
             {
-                advancedButton = new Button
+                var advancedButton = new Button
                 {
                     Text = "Advanced...",
                     Size = new Size(80, 25),
@@ -244,11 +414,8 @@ namespace KometaGUIv3.Forms
                 };
                 
                 advancedButton.Click += (s, e) => ShowAdvancedConfig(serviceId, config.Name);
+                controls.Add(advancedButton);
             }
-
-            var controls = new List<Control> { enableCheckbox, nameLabel, descLabel, keyLabel, keyTextBox };
-            if (linkButton != null) controls.Add(linkButton);
-            if (advancedButton != null) controls.Add(advancedButton);
 
             parent.Controls.AddRange(controls.ToArray());
             
@@ -346,26 +513,8 @@ namespace KometaGUIv3.Forms
                 y = AddAdvancedCheckbox(panel, "Add Missing", false, y);
                 y = AddAdvancedCheckbox(panel, "Add Existing", false, y);
             }
-            else if (serviceId == "trakt")
-            {
-                y = AddAdvancedField(panel, "Client ID:", "", y);
-                y = AddAdvancedField(panel, "Client Secret:", "", y);
-                y = AddAdvancedField(panel, "PIN:", "", y);
-                
-                var authLabel = new Label
-                {
-                    Text = "Authorization section will be auto-filled after authentication",
-                    Font = new Font("Segoe UI", 8F),
-                    ForeColor = Color.Gray,
-                    Size = new Size(400, 30),
-                    Location = new Point(20, y)
-                };
-                panel.Controls.Add(authLabel);
-            }
             else if (serviceId == "mal")
             {
-                y = AddAdvancedField(panel, "Client ID:", "", y);
-                y = AddAdvancedField(panel, "Client Secret:", "", y);
                 y = AddAdvancedField(panel, "Cache Expiration:", "60", y);
                 y = AddAdvancedField(panel, "Localhost URL:", "", y);
             }
@@ -401,6 +550,18 @@ namespace KometaGUIv3.Forms
                 Size = new Size(200, 25),
                 Location = new Point(150, y - 2)
             };
+
+            // Store advanced fields in serviceInputs for MAL
+            if (label.StartsWith("Cache Expiration"))
+            {
+                txt.Name = "mal_cache_expiration";
+                serviceInputs["mal_cache_expiration"] = txt;
+            }
+            else if (label.StartsWith("Localhost URL"))
+            {
+                txt.Name = "mal_localhost_url";
+                serviceInputs["mal_localhost_url"] = txt;
+            }
 
             parent.Controls.AddRange(new Control[] { lbl, txt });
             return y + 35;

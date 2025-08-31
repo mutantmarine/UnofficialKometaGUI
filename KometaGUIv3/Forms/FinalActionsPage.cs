@@ -119,8 +119,8 @@ namespace KometaGUIv3.Forms
 
             btnInstallKometa = new Button
             {
-                Text = "Install Kometa",
-                Size = new Size(120, 30),
+                Text = "Download Prerequisites",
+                Size = new Size(160, 30),
                 Location = new Point(640, 30),
                 Name = "btnPrimary"
             };
@@ -129,7 +129,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Update Kometa",
                 Size = new Size(120, 30),
-                Location = new Point(770, 30),
+                Location = new Point(810, 30),
                 Enabled = false
             };
 
@@ -650,23 +650,11 @@ namespace KometaGUIv3.Forms
             try
             {
                 var yamlContent = yamlGenerator.GenerateKometaConfig(profile);
-                var lines = yamlContent.Split('\n');
-                var preview = "";
                 
-                for (int i = 0; i < Math.Min(lines.Length, 50); i++)
-                {
-                    preview += lines[i] + "\n";
-                }
-
-                if (lines.Length > 50)
-                {
-                    preview += "... (truncated)";
-                }
-
                 var rtbPreview = this.Controls.Find("rtbPreview", true)[0] as RichTextBox;
                 if (rtbPreview != null)
                 {
-                    rtbPreview.Text = preview;
+                    rtbPreview.Text = yamlContent;
                 }
             }
             catch (Exception ex)

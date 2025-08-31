@@ -202,55 +202,7 @@ namespace KometaGUIv3.Forms
                     Font = new Font("Segoe UI", 8F)
                 };
 
-                // Special handling for awards with year ranges
-                if (collection.Id == "oscars" || collection.Id == "golden" || collection.Id == "bafta")
-                {
-                    var yearPanel = new Panel
-                    {
-                        Size = new Size(200, 25),
-                        Location = new Point(850, y - 2),
-                        BackColor = Color.Transparent
-                    };
-
-                    var lblFrom = new Label
-                    {
-                        Text = "From:",
-                        Size = new Size(40, 20),
-                        Location = new Point(0, 3),
-                        ForeColor = DarkTheme.TextColor,
-                        Font = new Font("Segoe UI", 8F)
-                    };
-
-                    var txtFrom = new TextBox
-                    {
-                        Text = "latest-10",
-                        Size = new Size(70, 20),
-                        Location = new Point(45, 0),
-                        Name = $"txtFrom_{collection.Id}"
-                    };
-
-                    var lblTo = new Label
-                    {
-                        Text = "To:",
-                        Size = new Size(25, 20),
-                        Location = new Point(120, 3),
-                        ForeColor = DarkTheme.TextColor,
-                        Font = new Font("Segoe UI", 8F)
-                    };
-
-                    var txtTo = new TextBox
-                    {
-                        Text = "latest",
-                        Size = new Size(50, 20),
-                        Location = new Point(145, 0),
-                        Name = $"txtTo_{collection.Id}"
-                    };
-
-                    yearPanel.Controls.AddRange(new Control[] { lblFrom, txtFrom, lblTo, txtTo });
-                    panel.Controls.Add(yearPanel);
-                    
-                    DarkTheme.ApplyDarkTheme(yearPanel);
-                }
+                // Awards collections now use simple checkbox only (advanced year range controls removed)
 
                 
                 panel.Controls.AddRange(new Control[] { checkBox, descLabel }); // Use AddRange like OverlaysPage

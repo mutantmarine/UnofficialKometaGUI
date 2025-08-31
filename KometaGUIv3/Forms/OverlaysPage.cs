@@ -71,6 +71,9 @@ namespace KometaGUIv3.Forms
             SetupControlButtons();
 
             this.Controls.AddRange(new Control[] { titleLabel, subtitleLabel });
+            
+            // Apply dark theme to get proper button styling
+            DarkTheme.ApplyDarkTheme(this);
         }
 
 

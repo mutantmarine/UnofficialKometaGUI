@@ -555,11 +555,13 @@ namespace KometaGUIv3.Services
         {
             sb.AppendLine("trakt:");
             
-            var credentials = profile.OptionalServices.ContainsKey("trakt_key") ? profile.OptionalServices["trakt_key"] : "";
+            var clientId = profile.OptionalServices.ContainsKey("trakt_client_id") ? profile.OptionalServices["trakt_client_id"] : "";
+            var clientSecret = profile.OptionalServices.ContainsKey("trakt_client_secret") ? profile.OptionalServices["trakt_client_secret"] : "";
+            var pin = profile.OptionalServices.ContainsKey("trakt_pin") ? profile.OptionalServices["trakt_pin"] : "";
             
-            sb.AppendLine($"  client_id: {credentials}");
-            sb.AppendLine("  client_secret:");
-            sb.AppendLine("  pin:");
+            sb.AppendLine($"  client_id: {clientId}");
+            sb.AppendLine($"  client_secret: {clientSecret}");
+            sb.AppendLine($"  pin: {pin}");
             sb.AppendLine("  authorization:");
             sb.AppendLine("    access_token:");
             sb.AppendLine("    created_at:");
@@ -574,12 +576,15 @@ namespace KometaGUIv3.Services
         {
             sb.AppendLine("mal:");
             
-            var credentials = profile.OptionalServices.ContainsKey("mal_key") ? profile.OptionalServices["mal_key"] : "";
+            var clientId = profile.OptionalServices.ContainsKey("mal_client_id") ? profile.OptionalServices["mal_client_id"] : "";
+            var clientSecret = profile.OptionalServices.ContainsKey("mal_client_secret") ? profile.OptionalServices["mal_client_secret"] : "";
+            var cacheExpiration = profile.OptionalServices.ContainsKey("mal_cache_expiration") ? profile.OptionalServices["mal_cache_expiration"] : "60";
+            var localhostUrl = profile.OptionalServices.ContainsKey("mal_localhost_url") ? profile.OptionalServices["mal_localhost_url"] : "";
             
-            sb.AppendLine($"  client_id: {credentials}");
-            sb.AppendLine("  client_secret:");
-            sb.AppendLine("  cache_expiration: 60");
-            sb.AppendLine("  localhost_url:");
+            sb.AppendLine($"  client_id: {clientId}");
+            sb.AppendLine($"  client_secret: {clientSecret}");
+            sb.AppendLine($"  cache_expiration: {cacheExpiration}");
+            sb.AppendLine($"  localhost_url: {localhostUrl}");
             sb.AppendLine("  authorization:");
             sb.AppendLine("    access_token:");
             sb.AppendLine("    expires_in:");

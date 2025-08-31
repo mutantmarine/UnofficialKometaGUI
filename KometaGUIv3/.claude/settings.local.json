@@ -31,7 +31,9 @@
       "Bash(taskkill:*)",
       "Bash(powershell:*)",
       "Read(C:\\Users\\1994c\\Downloads\\Kometa-2.2.0/**)",
-      "WebFetch(domain:metamanager.wiki)"
+      "WebFetch(domain:metamanager.wiki)",
+      "Read(C:\\Users\\1994c\\OneDrive\\Pictures/**)",
+      "Read(C:\\Users\\1994c\\OneDrive\\Pictures/**)"
     ],
     "deny": [],
     "ask": []
