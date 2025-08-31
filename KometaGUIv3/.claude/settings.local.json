@@ -30,7 +30,8 @@
       "WebSearch",
       "Bash(taskkill:*)",
       "Bash(powershell:*)",
-      "Read(C:\\Users\\1994c\\Downloads\\Kometa-2.2.0/**)"
+      "Read(C:\\Users\\1994c\\Downloads\\Kometa-2.2.0/**)",
+      "WebFetch(domain:metamanager.wiki)"
     ],
     "deny": [],
     "ask": []

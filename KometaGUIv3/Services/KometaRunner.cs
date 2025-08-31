@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using KometaGUIv3.Models;
 
@@ -11,87 +10,55 @@ namespace KometaGUIv3.Services
     {
         public event EventHandler<string> LogReceived;
         private Process kometaProcess;
-        private readonly KometaInstaller kometaInstaller;
 
         public KometaRunner()
         {
-            kometaInstaller = new KometaInstaller();
-            kometaInstaller.LogReceived += (s, message) => LogReceived?.Invoke(this, message);
         }
 
         public async Task<bool> RunKometaAsync(KometaProfile profile, string configPath)
         {
             try
             {
-                if (!File.Exists(configPath))
+                // Basic validation - just check if Kometa directory exists and has kometa.py
+                if (!Directory.Exists(profile.KometaDirectory))
                 {
-                    LogReceived?.Invoke(this, "Error: Configuration file not found.");
+                    LogReceived?.Invoke(this, "Error: Kometa directory not found.");
                     return false;
                 }
 
-                // Check installation status first
-                LogReceived?.Invoke(this, "Checking Kometa installation...");
-                var installStatus = await kometaInstaller.CheckInstallationStatusAsync(profile.KometaDirectory);
-                
-                if (!installStatus.IsKometaInstalled)
-                {
-                    LogReceived?.Invoke(this, "Kometa is not installed. Please install it first using the Install button.");
-                    return false;
-                }
-
-                if (!installStatus.IsVirtualEnvironmentReady)
-                {
-                    LogReceived?.Invoke(this, "Virtual environment is not ready. Please reinstall Kometa.");
-                    return false;
-                }
-
-                if (!installStatus.AreDependenciesInstalled)
-                {
-                    LogReceived?.Invoke(this, "Dependencies are not installed. Please reinstall Kometa.");
-                    return false;
-                }
-
-                // Use virtual environment Python
-                var venvPython = Path.Combine(profile.KometaDirectory, "kometa-venv", "Scripts", "python.exe");
                 var kometaScript = Path.Combine(profile.KometaDirectory, "kometa.py");
-
-                if (!File.Exists(venvPython))
-                {
-                    LogReceived?.Invoke(this, "Virtual environment Python not found.");
-                    return false;
-                }
-
                 if (!File.Exists(kometaScript))
                 {
-                    LogReceived?.Invoke(this, "Kometa script not found.");
+                    LogReceived?.Invoke(this, "Error: kometa.py not found in the specified directory.");
                     return false;
                 }
 
-                LogReceived?.Invoke(this, "Starting Kometa execution with 3-step process...");
-                LogReceived?.Invoke(this, $"Virtual Environment: {Path.Combine(profile.KometaDirectory, "kometa-venv")}");
-                LogReceived?.Invoke(this, $"Kometa Script: {kometaScript}");
-                LogReceived?.Invoke(this, $"Config Path: {configPath}");
-                LogReceived?.Invoke(this, $"Working Directory: {profile.KometaDirectory}");
-                LogReceived?.Invoke(this, "=====================================");
-                LogReceived?.Invoke(this, "Step 1: Activating virtual environment...");
-                LogReceived?.Invoke(this, "Step 2: Installing/updating requirements...");
-                LogReceived?.Invoke(this, "Step 3: Running Kometa...");
+                LogReceived?.Invoke(this, "Starting Kometa execution...");
+                LogReceived?.Invoke(this, $"Kometa Directory: {profile.KometaDirectory}");
                 LogReceived?.Invoke(this, "=====================================");
 
-                // Build the 3-step command sequence as requested:
-                // 1. .\kometa-venv\Scripts\activate
-                // 2. python -m pip install -r requirements.txt  
-                // 3. python kometa.py -r
-                var commandSequence = new StringBuilder();
-                commandSequence.Append($"cd /d \"{profile.KometaDirectory}\" && ");
-                commandSequence.Append(".\\kometa-venv\\Scripts\\activate && ");
-                commandSequence.Append("python -m pip install -r requirements.txt && ");
-                commandSequence.Append("python kometa.py -r");
+                // Use PowerShell with your proven script sequence
+                var scriptPath = profile.KometaDirectory.Replace("'", "''"); // Escape single quotes for PowerShell
+                var powershellCommand = $@"
+                    Set-Location -Path '{scriptPath}'
+                    if (-not (Test-Path 'kometa-venv')) {{
+                        Write-Output 'Creating virtual environment...'
+                        python -m venv kometa-venv
+                    }}
+                    Write-Output 'Activating virtual environment...'
+                    & '{scriptPath}\kometa-venv\Scripts\Activate.ps1'
+                    Write-Output 'Installing/updating requirements...'
+                    python -m pip install -r requirements.txt
+                    Write-Output 'Running Kometa...'
+                    python kometa.py -r
+                    Write-Output 'Deactivating virtual environment...'
+                    deactivate
+                ";
 
                 var startInfo = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"{commandSequence}\"",
+                    FileName = "powershell.exe",
+                    Arguments = $"-Command \"{powershellCommand}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -113,16 +80,7 @@ namespace KometaGUIv3.Services
                 {
                     if (!string.IsNullOrEmpty(e.Data))
                     {
-                        // Filter out common non-error messages that appear in stderr
-                        var message = e.Data;
-                        if (!message.Contains("UserWarning") && !message.Contains("DeprecationWarning"))
-                        {
-                            LogReceived?.Invoke(this, $"ERROR: {message}");
-                        }
-                        else
-                        {
-                            LogReceived?.Invoke(this, $"WARNING: {message}");
-                        }
+                        LogReceived?.Invoke(this, e.Data);
                     }
                 };
 
@@ -152,11 +110,42 @@ namespace KometaGUIv3.Services
                 {
                     kometaProcess.Kill();
                     LogReceived?.Invoke(this, "Kometa execution stopped by user.");
+                    
+                    // Deactivate virtual environment after stopping
+                    LogReceived?.Invoke(this, "Deactivating virtual environment...");
+                    DeactivateVirtualEnvironment();
                 }
                 catch (Exception ex)
                 {
                     LogReceived?.Invoke(this, $"Error stopping Kometa: {ex.Message}");
                 }
+            }
+        }
+
+        private async void DeactivateVirtualEnvironment()
+        {
+            try
+            {
+                var deactivateCommand = "deactivate";
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-Command \"{deactivateCommand}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    await Task.Run(() => process.WaitForExit());
+                    LogReceived?.Invoke(this, "Virtual environment deactivated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogReceived?.Invoke(this, $"Error deactivating virtual environment: {ex.Message}");
             }
         }
 
