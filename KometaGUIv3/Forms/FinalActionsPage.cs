@@ -26,7 +26,7 @@ namespace KometaGUIv3.Forms
         private Button btnInstallKometa, btnCheckInstallation, btnUpdateKometa;
         private ComboBox cmbScheduleFrequency;
         private NumericUpDown numScheduleInterval;
-        private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus;
+        private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus, lblTimeUnit;
         private ProgressBar progressBar, installationProgressBar;
         private bool isLocalhostRunning = false;
 
@@ -206,6 +206,7 @@ namespace KometaGUIv3.Forms
             };
             cmbScheduleFrequency.Items.AddRange(new[] { "Daily", "Weekly", "Monthly" });
             cmbScheduleFrequency.SelectedIndex = 0;
+            cmbScheduleFrequency.SelectedIndexChanged += CmbScheduleFrequency_SelectedIndexChanged;
 
             var lblEvery = new Label
             {
@@ -224,10 +225,10 @@ namespace KometaGUIv3.Forms
                 Value = 1
             };
 
-            var lblDays = new Label
+            lblTimeUnit = new Label
             {
                 Text = "day(s)",
-                Size = new Size(40, 20),
+                Size = new Size(65, 20),
                 Location = new Point(285, 85),
                 ForeColor = DarkTheme.TextColor
             };
@@ -236,7 +237,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Create Schedule",
                 Size = new Size(100, 30),
-                Location = new Point(340, 80)
+                Location = new Point(385, 80)
             };
 
             btnRemoveSchedule = new Button
@@ -257,7 +258,7 @@ namespace KometaGUIv3.Forms
             // Row 3: Other Actions
             btnStartLocalhost = new Button
             {
-                Text = "Start Localhost Server",
+                Text = "Enable Local Server",
                 Size = new Size(150, 40),
                 Location = new Point(20, 155),
                 Name = "btnPrimary"
@@ -280,7 +281,7 @@ namespace KometaGUIv3.Forms
 
             actionsPanel.Controls.AddRange(new Control[] {
                 btnGenerateYaml, btnRunKometa, btnStopKometa,
-                lblSchedule, cmbScheduleFrequency, lblEvery, numScheduleInterval, lblDays, btnCreateSchedule,
+                lblSchedule, cmbScheduleFrequency, lblEvery, numScheduleInterval, lblTimeUnit, btnCreateSchedule,
                 btnRemoveSchedule, lblScheduleStatus,
                 btnStartLocalhost, btnPayPal, lblLocalhostStatus
             });
@@ -552,40 +553,56 @@ namespace KometaGUIv3.Forms
         {
             if (!isLocalhostRunning)
             {
-                // Start localhost server
+                // Enable localhost server
                 try
                 {
-                    LogMessage("Starting localhost server on port 6969...");
+                    LogMessage("Enabling localhost server on port 6969...");
                     // TODO: Implement actual web server startup
                     // For now, simulate starting
                     isLocalhostRunning = true;
-                    btnStartLocalhost.Text = "Stop Localhost Server";
+                    btnStartLocalhost.Text = "Disable Local Server";
                     lblLocalhostStatus.Text = "Server: Running on localhost:6969";
                     lblLocalhostStatus.ForeColor = Color.LightGreen;
-                    LogMessage("Localhost server started successfully!");
+                    LogMessage("Localhost server enabled successfully!");
                     LogMessage("Access the web interface at: http://localhost:6969");
+                    
+                    // Automatically open browser to localhost:6969
+                    try
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = "http://localhost:6969",
+                            UseShellExecute = true
+                        };
+                        System.Diagnostics.Process.Start(psi);
+                        LogMessage("Opening web interface in browser...");
+                    }
+                    catch (Exception browserEx)
+                    {
+                        LogMessage($"Could not automatically open browser: {browserEx.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    LogMessage($"Error starting localhost server: {ex.Message}");
+                    LogMessage($"Error enabling localhost server: {ex.Message}");
                 }
             }
             else
             {
-                // Stop localhost server
+                // Disable localhost server
                 try
                 {
-                    LogMessage("Stopping localhost server...");
+                    LogMessage("Disabling localhost server...");
                     // TODO: Implement actual web server shutdown
                     isLocalhostRunning = false;
-                    btnStartLocalhost.Text = "Start Localhost Server";
+                    btnStartLocalhost.Text = "Enable Local Server";
                     lblLocalhostStatus.Text = "Server: Stopped";
                     lblLocalhostStatus.ForeColor = Color.Red;
-                    LogMessage("Localhost server stopped.");
+                    LogMessage("Localhost server disabled.");
                 }
                 catch (Exception ex)
                 {
-                    LogMessage($"Error stopping localhost server: {ex.Message}");
+                    LogMessage($"Error disabling localhost server: {ex.Message}");
                 }
             }
         }
@@ -1087,6 +1104,25 @@ namespace KometaGUIv3.Forms
             catch (InvalidOperationException)
             {
                 // Handle was not created or control is disposing
+            }
+        }
+
+        private void CmbScheduleFrequency_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cmbScheduleFrequency.SelectedIndex)
+            {
+                case 0: // Daily
+                    lblTimeUnit.Text = "day(s)";
+                    break;
+                case 1: // Weekly
+                    lblTimeUnit.Text = "week(s)";
+                    break;
+                case 2: // Monthly
+                    lblTimeUnit.Text = "month(s)";
+                    break;
+                default:
+                    lblTimeUnit.Text = "day(s)";
+                    break;
             }
         }
 

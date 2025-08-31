@@ -61,9 +61,9 @@ namespace KometaGUIv3.Forms
             // Kometa Directory Group
             grpKometaDirectory = new GroupBox
             {
-                Text = "Kometa Installation Directory",
-                Size = new Size(700, 80),
-                Location = new Point(30, 70),
+                Text = "Kometa Directory",
+                Size = new Size(700, 110),
+                Location = new Point(30, 80),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -81,14 +81,23 @@ namespace KometaGUIv3.Forms
                 Location = new Point(530, 27)
             };
 
-            grpKometaDirectory.Controls.AddRange(new Control[] { txtKometaDirectory, btnBrowseDirectory });
+            var lblDirectoryNote = new Label
+            {
+                Text = "Note: Directory folder must be named Kometa (e.g. C:\\path\\to\\Kometa) and may be empty or contain preexisting files.",
+                Size = new Size(680, 40),
+                Location = new Point(15, 60),
+                ForeColor = Color.FromArgb(180, 180, 180), // Muted color
+                Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 8.5F, FontStyle.Regular)
+            };
+
+            grpKometaDirectory.Controls.AddRange(new Control[] { txtKometaDirectory, btnBrowseDirectory, lblDirectoryNote });
 
             // Plex Setup Group
             grpPlexSetup = new GroupBox
             {
                 Text = "Plex Server Configuration",
-                Size = new Size(700, 320),
-                Location = new Point(30, 170),
+                Size = new Size(700, 310),
+                Location = new Point(30, 200),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -240,7 +249,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Plex Library Selection",
                 Size = new Size(700, 200),
-                Location = new Point(30, 510),
+                Location = new Point(30, 520),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -274,7 +283,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "The Movie Database (TMDb) Configuration",
                 Size = new Size(700, 140),
-                Location = new Point(30, 730),
+                Location = new Point(30, 740),
                 ForeColor = DarkTheme.TextColor
             };
 

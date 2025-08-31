@@ -367,7 +367,7 @@ namespace KometaGUIv3.Forms
             var keyLabel = new Label
             {
                 Text = $"{config.CredentialType}:",
-                Size = new Size(80, 20),
+                Size = new Size(75, 20),
                 Location = new Point(config.IsLocal ? 445 : 175, y),
                 ForeColor = DarkTheme.TextColor,
                 Name = $"{serviceId}_key_label"
@@ -376,7 +376,7 @@ namespace KometaGUIv3.Forms
             var keyTextBox = new TextBox
             {
                 Size = new Size(200, 25),
-                Location = new Point(config.IsLocal ? 525 : 255, y - 2),
+                Location = new Point(config.IsLocal ? 525 : 305, y - 2),
                 Name = $"{serviceId}_key",
                 UseSystemPasswordChar = true, // Hide sensitive keys
                 Enabled = false // Start disabled
@@ -392,7 +392,7 @@ namespace KometaGUIv3.Forms
                 {
                     Text = "Get API Key",
                     Size = new Size(100, 25),
-                    Location = new Point(config.IsLocal ? 745 : 475, y - 2),
+                    Location = new Point(config.IsLocal ? 745 : 515, y - 2),
                     Name = $"{serviceId}_link",
                     Enabled = false // Start disabled
                 };
@@ -408,7 +408,7 @@ namespace KometaGUIv3.Forms
                 {
                     Text = "Advanced...",
                     Size = new Size(80, 25),
-                    Location = new Point(config.IsLocal ? 865 : 595, y - 2),
+                    Location = new Point(config.IsLocal ? 865 : 625, y - 2),
                     Name = $"{serviceId}_advanced",
                     Enabled = false // Start disabled
                 };

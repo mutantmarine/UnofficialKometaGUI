@@ -321,6 +321,12 @@ This guided setup will help you create professional media library configurations
                 }
             };
 
+            // Auto-select first profile if any exist (after event handlers are set up)
+            if (profileListBox.Items.Count > 0)
+            {
+                profileListBox.SelectedIndex = 0;
+            }
+
             profilePanel.Controls.AddRange(new Control[] { 
                 titleLabel, profileListBox, createBtn, deleteBtn, newProfileTextBox 
             });
