@@ -1,0 +1,962 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="page-header">
+        <h1>Default Settings</h1>
+        <p>Configure default YAML settings and behavior for your Kometa installation</p>
+    </div>
+
+    <div class="settings-container">
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="general">General</button>
+            <button class="settings-tab" data-tab="collections">Collections</button>
+            <button class="settings-tab" data-tab="overlays">Overlays</button>
+            <button class="settings-tab" data-tab="operations">Operations</button>
+            <button class="settings-tab" data-tab="webhooks">Webhooks</button>
+        </div>
+
+        <!-- General Settings Tab -->
+        <div class="tab-content active" id="general-tab">
+            <div class="settings-sections">
+                <div class="settings-section">
+                    <h3>Run Configuration</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Run Order:</label>
+                            <select id="run-order">
+                                <option value="operations,metadata,collections,overlays">Default</option>
+                                <option value="collections,operations,metadata,overlays">Collections First</option>
+                                <option value="metadata,collections,operations,overlays">Metadata First</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="verify-ssl" checked />
+                                <span>Verify SSL certificates</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="check-nightly" />
+                                <span>Check for nightly updates</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="delete-below-minimum" />
+                                <span>Delete collections below minimum items</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cache Settings</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Cache Expiration (days):</label>
+                            <input type="number" id="cache-expiration" min="1" max="365" value="60" />
+                        </div>
+                        <div class="form-group">
+                            <label>Image Cache Expiration (days):</label>
+                            <input type="number" id="image-cache-expiration" min="1" max="365" value="60" />
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="cache-missing" checked />
+                                <span>Cache missing items</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Asset Directories</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Asset Directory:</label>
+                            <div class="input-with-button">
+                                <input type="text" id="asset-directory" placeholder="/path/to/assets" />
+                                <button type="button" onclick="browseDirectory('asset-directory')">Browse</button>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Asset Folders:</label>
+                            <div class="input-with-button">
+                                <input type="text" id="asset-folders" value="true" readonly />
+                                <button type="button" onclick="toggleAssetFolders()">Toggle</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="create-asset-folders" checked />
+                                <span>Create asset folders automatically</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="prioritize-assets" checked />
+                                <span>Prioritize local assets over online</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Download Settings</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Download URL Assets:</label>
+                            <select id="download-url-assets">
+                                <option value="true">Always</option>
+                                <option value="false">Never</option>
+                                <option value="missing">Only if missing</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Item Refresh Delay (seconds):</label>
+                            <input type="number" id="item-refresh-delay" min="0" max="60" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <label>Playlist Sync to Users:</label>
+                            <select id="playlist-sync-to-users">
+                                <option value="all">All Users</option>
+                                <option value="none">No Users</option>
+                                <option value="admin">Admin Only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collections Settings Tab -->
+        <div class="tab-content" id="collections-tab">
+            <div class="settings-sections">
+                <div class="settings-section">
+                    <h3>Collection Defaults</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Collection Order:</label>
+                            <select id="collection-order">
+                                <option value="release">Release Date</option>
+                                <option value="alpha">Alphabetical</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Missing Collection Behavior:</label>
+                            <select id="missing-collection">
+                                <option value="create">Create if missing</option>
+                                <option value="log">Log only</option>
+                                <option value="ignore">Ignore</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Minimum Items for Collection:</label>
+                            <input type="number" id="minimum-items" min="1" max="100" value="1" />
+                        </div>
+                        <div class="form-group">
+                            <label>Delete Empty Collections:</label>
+                            <select id="delete-empty-collections">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                                <option value="log">Log Only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Collection Display</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="show-filtered" />
+                                <span>Show filtered items in collection</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="show-missing" checked />
+                                <span>Show missing items in collection</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="save-report" checked />
+                                <span>Save missing items report</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="only-filter-missing" />
+                                <span>Only filter missing items</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Collection Mode</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Collection Mode:</label>
+                            <select id="collection-mode">
+                                <option value="default">Default</option>
+                                <option value="hide">Hide Collection</option>
+                                <option value="hide_items">Hide Items</option>
+                                <option value="show_items">Show Items</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ignore Blank Results:</label>
+                            <select id="ignore-blank-results">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlays Settings Tab -->
+        <div class="tab-content" id="overlays-tab">
+            <div class="settings-sections">
+                <div class="settings-section">
+                    <h3>Overlay Artwork</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Reapply Overlays:</label>
+                            <select id="reapply-overlays">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                                <option value="tmdb">Reset TMDb Images</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Overlay Artwork Filetype:</label>
+                            <select id="overlay-artwork-filetype">
+                                <option value="webp">WebP</option>
+                                <option value="jpg">JPEG</option>
+                                <option value="png">PNG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Overlay Artwork Quality (1-100):</label>
+                            <input type="range" id="overlay-artwork-quality" min="1" max="100" value="80" />
+                            <span id="quality-value">80</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Overlay Behavior</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="remove-overlays" />
+                                <span>Remove overlays before applying new ones</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-genre-update" />
+                                <span>Mass genre update from TMDb</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-audience-rating-update" />
+                                <span>Mass audience rating update</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-critic-rating-update" />
+                                <span>Mass critic rating update</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations Settings Tab -->
+        <div class="tab-content" id="operations-tab">
+            <div class="settings-sections">
+                <div class="settings-section">
+                    <h3>Library Operations</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="split-duplicates" />
+                                <span>Split duplicates automatically</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="assets-for-all" />
+                                <span>Assets for all items</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="delete-unmanaged-collections" />
+                                <span>Delete unmanaged collections</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-originally-available-update" />
+                                <span>Mass originally available update</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Content Rating Updates</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Mass Content Rating Update:</label>
+                            <select id="mass-content-rating-update">
+                                <option value="">None</option>
+                                <option value="omdb">OMDb</option>
+                                <option value="mdb">MDBList</option>
+                                <option value="tmdb">TMDb</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Content Rating Mapper:</label>
+                            <select id="content-rating-mapper">
+                                <option value="">Default</option>
+                                <option value="us">US System</option>
+                                <option value="uk">UK System</option>
+                                <option value="de">German System</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Episode Operations (TV Shows)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-episode-critic-rating-update" />
+                                <span>Mass episode critic rating update</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="mass-episode-audience-rating-update" />
+                                <span>Mass episode audience rating update</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Webhooks Settings Tab -->
+        <div class="tab-content" id="webhooks-tab">
+            <div class="settings-sections">
+                <div class="settings-section">
+                    <h3>Webhook Configuration</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Webhook URL:</label>
+                            <input type="url" id="webhook-url" placeholder="https://your-webhook-url.com/hook" />
+                        </div>
+                        <div class="form-group">
+                            <label>Webhook Method:</label>
+                            <select id="webhook-method">
+                                <option value="POST">POST</option>
+                                <option value="GET">GET</option>
+                                <option value="PUT">PUT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Content Type:</label>
+                            <select id="webhook-content-type">
+                                <option value="application/json">JSON</option>
+                                <option value="application/x-www-form-urlencoded">Form Data</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Webhook Events</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="webhook-run-start" checked />
+                                <span>Send webhook on run start</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="webhook-run-end" checked />
+                                <span>Send webhook on run completion</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="webhook-collection-changes" />
+                                <span>Send webhook on collection changes</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="webhook-version-changes" />
+                                <span>Send webhook on version changes</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Custom Headers</h3>
+                    <div class="custom-headers">
+                        <div class="header-row">
+                            <input type="text" placeholder="Header Name" class="header-name" />
+                            <input type="text" placeholder="Header Value" class="header-value" />
+                            <button type="button" class="btn btn-small" onclick="removeHeaderRow(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addHeaderRow()">Add Header</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-navigation">
+        <button class="btn btn-secondary" onclick="navigateToPage('services')">Previous</button>
+        <button class="btn btn-primary" onclick="navigateToPage('actions')">Next: Final Actions</button>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.settings-tab {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.settings-tab.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.settings-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.settings-section {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.settings-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="url"],
+.form-group select {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group input[type="url"]:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.form-group input[type="checkbox"] {
+    transform: scale(1.1);
+    margin-right: 0.5rem;
+}
+
+.form-group input[type="range"] {
+    width: 100%;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.input-with-button button {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.input-with-button button:hover {
+    background: var(--accent-hover);
+}
+
+.custom-headers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.header-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.header-name, .header-value {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8rem !important;
+}
+
+#quality-value {
+    color: var(--text-primary);
+    font-weight: bold;
+    margin-left: 0.5rem;
+}
+
+@@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-tabs {
+        flex-direction: column;
+    }
+    
+    .settings-tab {
+        text-align: center;
+    }
+    
+    .header-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+let settingsConfig = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSettingsPage();
+    loadSavedConfiguration();
+});
+
+function initializeSettingsPage() {
+    // Tab switching
+    const settingsTabs = document.querySelectorAll('.settings-tab');
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            switchSettingsTab(targetTab);
+        });
+    });
+    
+    // Input change handlers
+    document.addEventListener('input', handleSettingsChange);
+    document.addEventListener('change', handleSettingsChange);
+    
+    // Quality slider update
+    const qualitySlider = document.getElementById('overlay-artwork-quality');
+    if (qualitySlider) {
+        qualitySlider.addEventListener('input', function() {
+            document.getElementById('quality-value').textContent = this.value;
+        });
+    }
+}
+
+function switchSettingsTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
+function handleSettingsChange(event) {
+    const target = event.target;
+    if (!target.id) return;
+    
+    const settingKey = target.id.replace(/-/g, '_');
+    let value;
+    
+    if (target.type === 'checkbox') {
+        value = target.checked;
+    } else if (target.type === 'number' || target.type === 'range') {
+        value = parseInt(target.value);
+    } else {
+        value = target.value;
+    }
+    
+    settingsConfig[settingKey] = value;
+    
+    saveConfiguration();
+    syncWithSignalR();
+}
+
+function toggleAssetFolders() {
+    const field = document.getElementById('asset-folders');
+    field.value = field.value === 'true' ? 'false' : 'true';
+    
+    settingsConfig['asset_folders'] = field.value === 'true';
+    saveConfiguration();
+    syncWithSignalR();
+}
+
+function browseDirectory(fieldId) {
+    // This would typically open a directory browser dialog
+    // For web implementation, you might use a file input with webkitdirectory
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.onchange = function(e) {
+        if (e.target.files.length > 0) {
+            // Get the common path from the first file
+            const firstFile = e.target.files[0];
+            const pathParts = firstFile.webkitRelativePath.split('/');
+            const directoryPath = pathParts[0]; // Get the first directory
+            document.getElementById(fieldId).value = directoryPath;
+            
+            // Update settings
+            const settingKey = fieldId.replace(/-/g, '_');
+            settingsConfig[settingKey] = directoryPath;
+            saveConfiguration();
+            syncWithSignalR();
+        }
+    };
+    input.click();
+}
+
+function addHeaderRow() {
+    const headersContainer = document.querySelector('.custom-headers');
+    const headerRow = document.createElement('div');
+    headerRow.className = 'header-row';
+    headerRow.innerHTML = `
+        <input type="text" placeholder="Header Name" class="header-name" />
+        <input type="text" placeholder="Header Value" class="header-value" />
+        <button type="button" class="btn btn-small" onclick="removeHeaderRow(this)">Remove</button>
+    `;
+    headersContainer.appendChild(headerRow);
+    
+    // Add event listeners to the new inputs
+    const inputs = headerRow.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('change', updateWebhookHeaders);
+    });
+}
+
+function removeHeaderRow(button) {
+    const headerRow = button.parentElement;
+    headerRow.remove();
+    updateWebhookHeaders();
+}
+
+function updateWebhookHeaders() {
+    const headerRows = document.querySelectorAll('.header-row');
+    const headers = {};
+    
+    headerRows.forEach(row => {
+        const nameInput = row.querySelector('.header-name');
+        const valueInput = row.querySelector('.header-value');
+        
+        if (nameInput.value && valueInput.value) {
+            headers[nameInput.value] = valueInput.value;
+        }
+    });
+    
+    settingsConfig['webhook_headers'] = headers;
+    saveConfiguration();
+    syncWithSignalR();
+}
+
+function saveConfiguration() {
+    localStorage.setItem('settingsConfiguration', JSON.stringify(settingsConfig));
+}
+
+function loadSavedConfiguration() {
+    const saved = localStorage.getItem('settingsConfiguration');
+    if (saved) {
+        settingsConfig = JSON.parse(saved);
+        
+        // Apply saved configuration to UI
+        Object.entries(settingsConfig).forEach(([key, value]) => {
+            const fieldId = key.replace(/_/g, '-');
+            const field = document.getElementById(fieldId);
+            
+            if (field) {
+                if (field.type === 'checkbox') {
+                    field.checked = value;
+                } else if (field.type === 'range') {
+                    field.value = value;
+                    if (fieldId === 'overlay-artwork-quality') {
+                        document.getElementById('quality-value').textContent = value;
+                    }
+                } else {
+                    field.value = value;
+                }
+            }
+        });
+        
+        // Load webhook headers
+        if (settingsConfig['webhook_headers']) {
+            const headers = settingsConfig['webhook_headers'];
+            const headersContainer = document.querySelector('.custom-headers');
+            
+            // Clear existing headers
+            headersContainer.innerHTML = '';
+            
+            // Add saved headers
+            Object.entries(headers).forEach(([name, value]) => {
+                const headerRow = document.createElement('div');
+                headerRow.className = 'header-row';
+                headerRow.innerHTML = `
+                    <input type="text" placeholder="Header Name" class="header-name" value="${name}" />
+                    <input type="text" placeholder="Header Value" class="header-value" value="${value}" />
+                    <button type="button" class="btn btn-small" onclick="removeHeaderRow(this)">Remove</button>
+                `;
+                headersContainer.appendChild(headerRow);
+                
+                // Add event listeners
+                const inputs = headerRow.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('change', updateWebhookHeaders);
+                });
+            });
+            
+            // Add empty row if no headers exist
+            if (Object.keys(headers).length === 0) {
+                addHeaderRow();
+            }
+        } else {
+            addHeaderRow();
+        }
+    } else {
+        // Set defaults
+        setDefaultSettings();
+        addHeaderRow();
+    }
+}
+
+function setDefaultSettings() {
+    const defaults = {
+        'run_order': 'operations,metadata,collections,overlays',
+        'verify_ssl': true,
+        'cache_expiration': 60,
+        'image_cache_expiration': 60,
+        'cache_missing': true,
+        'asset_folders': true,
+        'create_asset_folders': true,
+        'prioritize_assets': true,
+        'download_url_assets': 'missing',
+        'item_refresh_delay': 0,
+        'playlist_sync_to_users': 'all',
+        'collection_order': 'release',
+        'missing_collection': 'create',
+        'minimum_items': 1,
+        'delete_empty_collections': false,
+        'show_missing': true,
+        'save_report': true,
+        'collection_mode': 'default',
+        'ignore_blank_results': false,
+        'reapply_overlays': false,
+        'overlay_artwork_filetype': 'webp',
+        'overlay_artwork_quality': 80,
+        'webhook_run_start': true,
+        'webhook_run_end': true,
+        'webhook_method': 'POST',
+        'webhook_content_type': 'application/json'
+    };
+    
+    settingsConfig = { ...defaults };
+    
+    // Apply defaults to UI
+    Object.entries(defaults).forEach(([key, value]) => {
+        const fieldId = key.replace(/_/g, '-');
+        const field = document.getElementById(fieldId);
+        
+        if (field) {
+            if (field.type === 'checkbox') {
+                field.checked = value;
+            } else if (field.type === 'range') {
+                field.value = value;
+                if (fieldId === 'overlay-artwork-quality') {
+                    document.getElementById('quality-value').textContent = value;
+                }
+            } else {
+                field.value = value;
+            }
+        }
+    });
+}
+
+function syncWithSignalR() {
+    if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+        window.connection.invoke('UpdateConfiguration', 'settings', settingsConfig);
+    }
+}
+
+function navigateToPage(page) {
+    // Sync current state before navigation
+    if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+        window.connection.invoke('PageChanged', page);
+    }
+    
+    // Navigate to the page
+    window.location.href = '/' + page;
+}
+
+// Export current settings to YAML preview
+function previewYamlSettings() {
+    const yamlPreview = generateSettingsYaml();
+    
+    // Show in a modal or new window
+    const previewWindow = window.open('', '_blank', 'width=800,height=600');
+    previewWindow.document.write(`
+        <html>
+            <head>
+                <title>Settings YAML Preview</title>
+                <style>
+                    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+                    pre { white-space: pre-wrap; word-wrap: break-word; }
+                </style>
+            </head>
+            <body>
+                <h2>Generated Settings YAML</h2>
+                <pre>${yamlPreview}</pre>
+            </body>
+        </html>
+    `);
+}
+
+function generateSettingsYaml() {
+    // This would convert the settings object to YAML format
+    // For now, return a simplified version
+    let yaml = 'settings:\n';
+    
+    Object.entries(settingsConfig).forEach(([key, value]) => {
+        if (typeof value === 'boolean') {
+            yaml += `  ${key}: ${value}\n`;
+        } else if (typeof value === 'number') {
+            yaml += `  ${key}: ${value}\n`;
+        } else if (typeof value === 'string' && value) {
+            yaml += `  ${key}: "${value}"\n`;
+        }
+    });
+    
+    return yaml;
+}
+</script>

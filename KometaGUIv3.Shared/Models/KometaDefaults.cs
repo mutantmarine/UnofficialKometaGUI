@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace KometaGUIv3.Models
+namespace KometaGUIv3.Shared.Models
 {
     public static class KometaDefaults
     {

@@ -1,0 +1,871 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Collections";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="page-header">
+        <h1>Collection Selection</h1>
+        <p>Select the collections you want to include in your libraries. These collections will automatically update with trending, popular, and top-rated content.</p>
+    </div>
+
+    <div class="charts-container">
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="charts">Charts</button>
+            <button class="tab-button" data-tab="awards">Awards</button>
+            <button class="tab-button" data-tab="movies">Movies Only</button>
+            <button class="tab-button" data-tab="tvshows">TV Shows Only</button>
+            <button class="tab-button" data-tab="both">Movies & TV Shows</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Charts Tab -->
+            <div class="tab-panel active" id="charts-tab">
+                <h3>Chart Collections</h3>
+                <div class="collection-grid">
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="basic" />
+                            <div class="collection-card">
+                                <h4>Basic Charts</h4>
+                                <p>Essential chart collections including trending and popular content</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="tmdb" />
+                            <div class="collection-card">
+                                <h4>TMDb Charts</h4>
+                                <p>The Movie Database trending, popular, and top-rated collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="imdb" />
+                            <div class="collection-card">
+                                <h4>IMDb Charts</h4>
+                                <p>IMDb Top 250, popular titles, and ratings-based collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="trakt" />
+                            <div class="collection-card">
+                                <h4>Trakt Charts</h4>
+                                <p>Trakt trending, popular, and most-watched collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="tautulli" />
+                            <div class="collection-card">
+                                <h4>Tautulli Charts</h4>
+                                <p>Local server statistics and most-played collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="letterboxd" />
+                            <div class="collection-card">
+                                <h4>Letterboxd Charts</h4>
+                                <p>Letterboxd popular films and curated lists</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="anilist" />
+                            <div class="collection-card">
+                                <h4>AniList Charts</h4>
+                                <p>Anime trending, popular, and top-rated series</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="myanimelist" />
+                            <div class="collection-card">
+                                <h4>MyAnimeList Charts</h4>
+                                <p>MAL top anime, popular seasonal releases</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="other_chart" />
+                            <div class="collection-card">
+                                <h4>Other Charts</h4>
+                                <p>Additional miscellaneous chart collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="separator_chart" />
+                            <div class="collection-card">
+                                <h4>Chart Separators</h4>
+                                <p>Visual separators for organizing chart collections</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Awards Tab -->
+            <div class="tab-panel" id="awards-tab">
+                <h3>Award Collections</h3>
+                <div class="collection-grid">
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="oscars" />
+                            <div class="collection-card">
+                                <h4>Academy Awards</h4>
+                                <p>Oscar winners and nominees by year</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="golden" />
+                            <div class="collection-card">
+                                <h4>Golden Globe Awards</h4>
+                                <p>Golden Globe winners and nominees</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="bafta" />
+                            <div class="collection-card">
+                                <h4>BAFTA Awards</h4>
+                                <p>British Academy Film Awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="emmy" />
+                            <div class="collection-card">
+                                <h4>Emmy Awards</h4>
+                                <p>Television Emmy Awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="sag" />
+                            <div class="collection-card">
+                                <h4>Screen Actors Guild Awards</h4>
+                                <p>SAG Award winners and nominees</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="cannes" />
+                            <div class="collection-card">
+                                <h4>Cannes Film Festival</h4>
+                                <p>Palme d'Or and competition selections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="venice" />
+                            <div class="collection-card">
+                                <h4>Venice Film Festival</h4>
+                                <p>Golden Lion and official selections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="berlinale" />
+                            <div class="collection-card">
+                                <h4>Berlin International Film Festival</h4>
+                                <p>Golden Bear and competition films</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="sundance" />
+                            <div class="collection-card">
+                                <h4>Sundance Film Festival</h4>
+                                <p>Award winners and notable premieres</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="tiff" />
+                            <div class="collection-card">
+                                <h4>Toronto International Film Festival</h4>
+                                <p>People's Choice and selections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="spirit" />
+                            <div class="collection-card">
+                                <h4>Independent Spirit Awards</h4>
+                                <p>Independent film awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="choice" />
+                            <div class="collection-card">
+                                <h4>Choice Awards</h4>
+                                <p>Teen Choice and People's Choice Awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="pca" />
+                            <div class="collection-card">
+                                <h4>People's Choice Awards</h4>
+                                <p>Popular voted awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="cesar" />
+                            <div class="collection-card">
+                                <h4>César Awards</h4>
+                                <p>French film industry awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="razzie" />
+                            <div class="collection-card">
+                                <h4>Golden Raspberry Awards</h4>
+                                <p>Worst film awards</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="nfr" />
+                            <div class="collection-card">
+                                <h4>National Film Registry</h4>
+                                <p>Culturally significant films</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="separator_award" />
+                            <div class="collection-card">
+                                <h4>Award Separators</h4>
+                                <p>Visual separators for award collections</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="award-settings">
+                    <h4>Award Settings</h4>
+                    <div class="form-group">
+                        <label>Year Range:</label>
+                        <div class="year-range">
+                            <input type="number" id="award-start-year" min="1900" max="2030" value="2020" />
+                            <span>to</span>
+                            <input type="number" id="award-end-year" min="1900" max="2030" value="2024" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movies Only Tab -->
+            <div class="tab-panel" id="movies-tab">
+                <h3>Movies Only Collections</h3>
+                <div class="collection-grid">
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_us" />
+                            <div class="collection-card">
+                                <h4>US Content Ratings</h4>
+                                <p>G, PG, PG-13, R rated collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="continent" />
+                            <div class="collection-card">
+                                <h4>By Continent</h4>
+                                <p>Collections organized by continent of origin</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="country" />
+                            <div class="collection-card">
+                                <h4>By Country</h4>
+                                <p>Collections by country of production</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="decade" />
+                            <div class="collection-card">
+                                <h4>By Decade</h4>
+                                <p>Movies organized by release decade</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="director" />
+                            <div class="collection-card">
+                                <h4>By Director</h4>
+                                <p>Collections featuring prominent directors</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="franchise" />
+                            <div class="collection-card">
+                                <h4>Movie Franchises</h4>
+                                <p>Movie series and franchise collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="producer" />
+                            <div class="collection-card">
+                                <h4>By Producer</h4>
+                                <p>Collections by notable producers</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="region" />
+                            <div class="collection-card">
+                                <h4>By Region</h4>
+                                <p>Regional movie collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="seasonal" />
+                            <div class="collection-card">
+                                <h4>Seasonal Movies</h4>
+                                <p>Holiday and seasonal themed movies</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="writer" />
+                            <div class="collection-card">
+                                <h4>By Writer</h4>
+                                <p>Collections featuring notable screenwriters</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TV Shows Only Tab -->
+            <div class="tab-panel" id="tvshows-tab">
+                <h3>TV Shows Only Collections</h3>
+                <div class="collection-grid">
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_us_tv" />
+                            <div class="collection-card">
+                                <h4>US TV Ratings</h4>
+                                <p>TV-Y, TV-G, TV-PG, TV-14, TV-MA rated shows</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="continent_tv" />
+                            <div class="collection-card">
+                                <h4>By Continent</h4>
+                                <p>TV shows organized by continent of origin</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="country_tv" />
+                            <div class="collection-card">
+                                <h4>By Country</h4>
+                                <p>TV shows by country of production</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="decade_tv" />
+                            <div class="collection-card">
+                                <h4>By Decade</h4>
+                                <p>TV shows organized by premiere decade</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="franchise_tv" />
+                            <div class="collection-card">
+                                <h4>TV Franchises</h4>
+                                <p>Connected TV series and universes</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="network" />
+                            <div class="collection-card">
+                                <h4>By Network</h4>
+                                <p>Collections by broadcasting network</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="region_tv" />
+                            <div class="collection-card">
+                                <h4>By Region</h4>
+                                <p>Regional TV show collections</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movies & TV Shows Tab -->
+            <div class="tab-panel" id="both-tab">
+                <h3>Movies & TV Shows Collections</h3>
+                <div class="collection-grid">
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="actor" />
+                            <div class="collection-card">
+                                <h4>By Actor</h4>
+                                <p>Collections featuring specific actors</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="aspect" />
+                            <div class="collection-card">
+                                <h4>By Aspect Ratio</h4>
+                                <p>Widescreen, standard, and other aspect ratios</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="audio_language" />
+                            <div class="collection-card">
+                                <h4>By Audio Language</h4>
+                                <p>Collections by spoken language</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="based" />
+                            <div class="collection-card">
+                                <h4>Based On...</h4>
+                                <p>Adaptations from books, comics, true stories</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="collectionless" />
+                            <div class="collection-card">
+                                <h4>Standalone Titles</h4>
+                                <p>Movies/shows without series connections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="genre" />
+                            <div class="collection-card">
+                                <h4>By Genre</h4>
+                                <p>Action, Comedy, Drama, Horror, etc.</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="resolution" />
+                            <div class="collection-card">
+                                <h4>By Resolution</h4>
+                                <p>4K, 1080p, 720p quality collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="streaming" />
+                            <div class="collection-card">
+                                <h4>Streaming Services</h4>
+                                <p>Netflix, Disney+, HBO Max, etc.</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="studio" />
+                            <div class="collection-card">
+                                <h4>By Studio</h4>
+                                <p>Production company collections</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="subtitle_language" />
+                            <div class="collection-card">
+                                <h4>By Subtitle Language</h4>
+                                <p>Collections by available subtitles</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="universe" />
+                            <div class="collection-card">
+                                <h4>Shared Universes</h4>
+                                <p>MCU, DC, Star Wars, etc.</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="year" />
+                            <div class="collection-card">
+                                <h4>By Year</h4>
+                                <p>Collections organized by release year</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_au" />
+                            <div class="collection-card">
+                                <h4>Australian Ratings</h4>
+                                <p>Australian classification system</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_de" />
+                            <div class="collection-card">
+                                <h4>German Ratings</h4>
+                                <p>German FSK rating system</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_uk" />
+                            <div class="collection-card">
+                                <h4>UK Ratings</h4>
+                                <p>British Board of Film Classification</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_nz" />
+                            <div class="collection-card">
+                                <h4>New Zealand Ratings</h4>
+                                <p>New Zealand classification</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="collection-item">
+                        <label>
+                            <input type="checkbox" class="chart-checkbox" data-chart="content_rating_mal" />
+                            <div class="collection-card">
+                                <h4>MAL Content Ratings</h4>
+                                <p>MyAnimeList content ratings</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-navigation">
+        <button class="btn btn-secondary" onclick="navigateToPage('connections')">Previous</button>
+        <button class="btn btn-primary" onclick="navigateToPage('overlays')">Next: Overlays</button>
+    </div>
+</div>
+
+<style>
+.charts-container {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.tab-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab-button {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.tab-button.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.collection-item {
+    position: relative;
+}
+
+.collection-item label {
+    cursor: pointer;
+    display: block;
+}
+
+.collection-card {
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.collection-item input[type="checkbox"] {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2;
+    transform: scale(1.2);
+}
+
+.collection-card:hover {
+    border-color: var(--accent-primary);
+    background: var(--bg-hover);
+}
+
+.collection-item input[type="checkbox"]:checked + .collection-card {
+    border-color: var(--accent-primary);
+    background: rgba(0, 120, 212, 0.1);
+}
+
+.collection-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.collection-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.award-settings, .streaming-settings, .seasonal-settings {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.award-settings h4, .seasonal-settings h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+}
+
+.year-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.year-range input {
+    width: 80px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.year-range span {
+    color: var(--text-secondary);
+}
+
+.streaming-settings label, .seasonal-settings label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.seasonal-settings .form-group {
+    margin-bottom: 0.5rem;
+}
+
+@@media (max-width: 768px) {
+    .collection-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-navigation {
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and panels
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding panel
+            this.classList.add('active');
+            document.getElementById(targetTab + '-tab').classList.add('active');
+        });
+    });
+    
+    // Chart selection handling
+    const chartCheckboxes = document.querySelectorAll('.chart-checkbox');
+    chartCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateChartsConfiguration();
+            
+            // Sync with SignalR
+            if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+                window.connection.invoke('UpdateConfiguration', 'charts', getChartsData());
+            }
+        });
+    });
+    
+    function updateChartsConfiguration() {
+        const selectedCharts = [];
+        chartCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedCharts.push(checkbox.getAttribute('data-chart'));
+            }
+        });
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('selectedCharts', JSON.stringify(selectedCharts));
+    }
+    
+    function getChartsData() {
+        const selectedCharts = [];
+        chartCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedCharts.push(checkbox.getAttribute('data-chart'));
+            }
+        });
+        
+        return {
+            selectedCharts: selectedCharts,
+            awardYearRange: {
+                start: document.getElementById('award-start-year')?.value || 2020,
+                end: document.getElementById('award-end-year')?.value || 2024
+            },
+            originalsOnly: document.getElementById('originals-only')?.checked || false,
+            seasonalSchedule: document.querySelector('input[name="seasonal-schedule"]:checked')?.value || 'always'
+        };
+    }
+    
+    // Load saved configuration
+    const savedCharts = localStorage.getItem('selectedCharts');
+    if (savedCharts) {
+        const chartList = JSON.parse(savedCharts);
+        chartCheckboxes.forEach(checkbox => {
+            if (chartList.includes(checkbox.getAttribute('data-chart'))) {
+                checkbox.checked = true;
+            }
+        });
+    }
+});
+
+function navigateToPage(page) {
+    // Sync current state before navigation
+    if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+        window.connection.invoke('PageChanged', page);
+    }
+    
+    // Navigate to the page
+    window.location.href = '/' + page;
+}
+</script>

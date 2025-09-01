@@ -1,0 +1,244 @@
+@model KometaGUIv3.Web.Models.ProfileManagementViewModel
+@{
+    ViewData["Title"] = "Profile Management";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Profile Management</h1>
+    <p class="page-description">Create, select, or delete configuration profiles for your Kometa setups.</p>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Existing Profiles</h3>
+            <p class="card-subtitle">Select a profile to continue configuration</p>
+        </div>
+
+        <div id="profile-list" class="list">
+            @if (Model.Profiles.Any())
+            {
+                @foreach (var profile in Model.Profiles)
+                {
+                    <div class="list-item" data-profile="@profile.Name">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>@profile.Name</strong>
+                                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;">
+                                    Created: @profile.CreatedDate.ToString("MMM dd, yyyy")
+                                    @if (profile.LastModified > profile.CreatedDate)
+                                    {
+                                        <span> • Modified: @profile.LastModified.ToString("MMM dd, yyyy")</span>
+                                    }
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="@Url.Action("Connections", "Home", new { profileName = profile.Name })" 
+                                   class="btn btn-primary">Continue</a>
+                                <button type="button" class="btn btn-danger" 
+                                        onclick="deleteProfile('@profile.Name')">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="list-item" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+                    <p>No profiles found. Create your first profile to get started.</p>
+                </div>
+            }
+        </div>
+
+        @if (Model.Profiles.Any())
+        {
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Select a profile above to continue, or create a new one.
+                </p>
+            </div>
+        }
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create New Profile</h3>
+            <p class="card-subtitle">Set up a new configuration profile</p>
+        </div>
+
+        <form method="post" action="@Url.Action("CreateProfile", "Home")" id="create-profile-form">
+            <div class="form-group">
+                <label class="form-label" for="profileName">Profile Name</label>
+                <input type="text" 
+                       class="form-input" 
+                       id="profileName" 
+                       name="profileName" 
+                       placeholder="Enter profile name (e.g., 'Main Library', 'Movies Only')" 
+                       required maxlength="50" />
+                <small style="color: var(--text-muted); margin-top: 5px; display: block;">
+                    Choose a descriptive name for this configuration profile.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-success" id="create-btn">
+                    <span>Create Profile</span>
+                </button>
+            </div>
+        </form>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <h4 style="color: var(--text-primary); margin-bottom: 15px;">💡 Profile Tips</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.6;">
+                <li>Use descriptive names like "Main Movies" or "Kids Library"</li>
+                <li>Each profile maintains its own Plex/TMDb connections</li>
+                <li>Profiles can have different collection and overlay settings</li>
+                <li>You can switch between profiles at any time</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Profile Modal -->
+<div id="delete-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-secondary); padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: 20px; color: var(--danger);">⚠️ Delete Profile</h3>
+        <p style="margin-bottom: 25px; color: var(--text-secondary);">
+            Are you sure you want to delete the profile "<span id="delete-profile-name" style="font-weight: bold; color: var(--text-primary);"></span>"?
+        </p>
+        <p style="margin-bottom: 25px; font-size: 0.9rem; color: var(--warning);">
+            This action cannot be undone. All configuration data for this profile will be permanently lost.
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
+            <form method="post" action="@Url.Action("DeleteProfile", "Home")" style="display: inline;">
+                <input type="hidden" name="profileName" id="delete-profile-input" />
+                <button type="submit" class="btn btn-danger">Delete Profile</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let selectedProfile = null;
+
+    // Profile selection handling
+    document.querySelectorAll('.list-item[data-profile]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
+                return; // Don't select if clicking buttons
+            }
+
+            // Remove previous selection
+            document.querySelectorAll('.list-item').forEach(i => i.classList.remove('selected'));
+            
+            // Select this item
+            this.classList.add('selected');
+            selectedProfile = this.getAttribute('data-profile');
+
+            // Send profile selection event
+            if (window.kometaSync) {
+                kometaSync.sendConfigurationChange('profileSelected', selectedProfile);
+            }
+        });
+    });
+
+    // Auto-select first profile if only one exists
+    const profileItems = document.querySelectorAll('.list-item[data-profile]');
+    if (profileItems.length === 1) {
+        profileItems[0].click();
+    }
+
+    // Form validation
+    document.getElementById('create-profile-form').addEventListener('submit', function(e) {
+        const input = document.getElementById('profileName');
+        const value = input.value.trim();
+        
+        if (!value) {
+            e.preventDefault();
+            input.focus();
+            return false;
+        }
+
+        // Check for duplicate names
+        const existingNames = Array.from(document.querySelectorAll('.list-item[data-profile]'))
+            .map(item => item.getAttribute('data-profile').toLowerCase());
+        
+        if (existingNames.includes(value.toLowerCase())) {
+            e.preventDefault();
+            alert('A profile with this name already exists. Please choose a different name.');
+            input.focus();
+            return false;
+        }
+
+        // Disable button to prevent double submission
+        document.getElementById('create-btn').disabled = true;
+        document.getElementById('create-btn').innerHTML = '<span class="spinner"></span> Creating...';
+    });
+
+    // Delete profile functions
+    function deleteProfile(profileName) {
+        document.getElementById('delete-profile-name').textContent = profileName;
+        document.getElementById('delete-profile-input').value = profileName;
+        document.getElementById('delete-modal').style.display = 'block';
+    }
+
+    function cancelDelete() {
+        document.getElementById('delete-modal').style.display = 'none';
+    }
+
+    // Close modal on background click
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            cancelDelete();
+        }
+    });
+
+    // SignalR event handlers
+    if (window.kometaSync) {
+        // Send page navigation event
+        kometaSync.sendPageNavigation(1); // Profile Management is index 1
+
+        // Handle profile events from other clients
+        kometaSync.on('profileCreated', (profile) => {
+            // Refresh page to show new profile
+            setTimeout(() => window.location.reload(), 1000);
+        });
+
+        kometaSync.on('profileDeleted', (profileName) => {
+            // Remove profile from list
+            const profileItem = document.querySelector(`[data-profile="${profileName}"]`);
+            if (profileItem) {
+                profileItem.style.opacity = '0';
+                profileItem.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    profileItem.remove();
+                    
+                    // Show empty state if no profiles remain
+                    if (!document.querySelectorAll('.list-item[data-profile]').length) {
+                        setTimeout(() => window.location.reload(), 500);
+                    }
+                }, 300);
+            }
+        });
+
+        kometaSync.on('profileSelected', (profileName) => {
+            // Highlight selected profile from other clients
+            document.querySelectorAll('.list-item').forEach(i => i.classList.remove('selected'));
+            const item = document.querySelector(`[data-profile="${profileName}"]`);
+            if (item) {
+                item.classList.add('selected');
+            }
+        });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && selectedProfile && !e.target.matches('input, textarea, button')) {
+            window.location.href = `@Url.Action("Connections", "Home")?profileName=${selectedProfile}`;
+        }
+    });
+</script>
+}

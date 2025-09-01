@@ -5,7 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
+using KometaGUIv3.Shared.Services;
 using KometaGUIv3.Services;
 using KometaGUIv3.Utils;
 

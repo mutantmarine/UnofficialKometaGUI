@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 
 namespace KometaGUIv3.Services
 {

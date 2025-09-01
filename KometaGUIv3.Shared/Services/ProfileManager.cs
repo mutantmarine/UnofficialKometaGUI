@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 using Newtonsoft.Json;
 
-namespace KometaGUIv3.Services
+namespace KometaGUIv3.Shared.Services
 {
     public class ProfileManager
     {

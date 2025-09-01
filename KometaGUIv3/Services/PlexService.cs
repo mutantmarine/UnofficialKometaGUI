@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 using Newtonsoft.Json;
 
 namespace KometaGUIv3.Services

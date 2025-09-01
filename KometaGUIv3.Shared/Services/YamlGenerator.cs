@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 using YamlDotNet.Serialization;
 
-namespace KometaGUIv3.Services
+namespace KometaGUIv3.Shared.Services
 {
     public class YamlGenerator
     {

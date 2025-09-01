@@ -3,7 +3,8 @@ using System.Drawing;
 using System.Windows.Forms;
 using KometaGUIv3.Utils;
 using KometaGUIv3.Services;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
+using KometaGUIv3.Shared.Services;
 
 namespace KometaGUIv3.Forms
 {

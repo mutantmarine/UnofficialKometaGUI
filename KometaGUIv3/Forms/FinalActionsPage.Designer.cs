@@ -6,9 +6,14 @@ namespace KometaGUIv3.Forms
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+                // Dispose the localhost server manager to clean up resources
+                localhostServerManager?.Dispose();
             }
             base.Dispose(disposing);
         }

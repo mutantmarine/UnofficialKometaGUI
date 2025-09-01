@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 
 namespace KometaGUIv3.Services
 {

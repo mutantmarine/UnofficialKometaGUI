@@ -1,0 +1,817 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Services";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="page-header">
+        <h1>Optional Services</h1>
+        <p>Configure additional API services and local media management tools</p>
+    </div>
+
+    <div class="services-container">
+        <div class="services-tabs">
+            <button class="service-tab active" data-tab="api">API Services</button>
+            <button class="service-tab" data-tab="local">Local Services</button>
+            <button class="service-tab" data-tab="notifications">Notifications</button>
+        </div>
+
+        <!-- API Services Tab -->
+        <div class="tab-content active" id="api-tab">
+            <div class="services-grid">
+                <!-- Tautulli -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Tautulli</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="tautulli">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Plex media server monitoring and statistics</p>
+                    <div class="service-config" id="tautulli-config">
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="tautulli-api-key" placeholder="Tautulli API Key" />
+                        </div>
+                        <div class="form-group">
+                            <label>Server URL:</label>
+                            <input type="text" id="tautulli-url" placeholder="http://192.168.1.100:8181" />
+                        </div>
+                        <a href="https://github.com/Tautulli/Tautulli" target="_blank" class="help-link">Get API Key Help</a>
+                    </div>
+                </div>
+
+                <!-- GitHub -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>GitHub</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="github">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Access GitHub repositories for custom configs</p>
+                    <div class="service-config" id="github-config">
+                        <div class="form-group">
+                            <label>Personal Access Token:</label>
+                            <input type="password" id="github-token" placeholder="GitHub Personal Access Token" />
+                        </div>
+                        <a href="https://github.com/settings/tokens" target="_blank" class="help-link">Generate Token</a>
+                    </div>
+                </div>
+
+                <!-- MDBList -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>MDBList</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="mdblist">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Movie and TV show database with ratings</p>
+                    <div class="service-config" id="mdblist-config">
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="mdblist-api-key" placeholder="MDBList API Key" />
+                        </div>
+                        <div class="form-group">
+                            <label>Cache Expiration (days):</label>
+                            <input type="number" id="mdblist-cache" min="1" max="365" value="60" />
+                        </div>
+                        <a href="https://mdblist.com/api/" target="_blank" class="help-link">Get API Key</a>
+                    </div>
+                </div>
+
+                <!-- OMDb -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>OMDb</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="omdb">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Open Movie Database for additional metadata</p>
+                    <div class="service-config" id="omdb-config">
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="omdb-api-key" placeholder="OMDb API Key" />
+                        </div>
+                        <div class="form-group">
+                            <label>Cache Expiration (days):</label>
+                            <input type="number" id="omdb-cache" min="1" max="365" value="60" />
+                        </div>
+                        <a href="http://www.omdbapi.com/apikey.aspx" target="_blank" class="help-link">Get API Key</a>
+                    </div>
+                </div>
+
+                <!-- Trakt -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Trakt</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="trakt">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Movie and TV show tracking platform</p>
+                    <div class="service-config" id="trakt-config">
+                        <div class="form-group">
+                            <label>Client ID:</label>
+                            <input type="text" id="trakt-client-id" placeholder="Trakt Client ID" />
+                        </div>
+                        <div class="form-group">
+                            <label>Client Secret:</label>
+                            <input type="password" id="trakt-client-secret" placeholder="Trakt Client Secret" />
+                        </div>
+                        <div class="form-group">
+                            <label>PIN (optional):</label>
+                            <input type="text" id="trakt-pin" placeholder="Authentication PIN" />
+                        </div>
+                        <a href="https://trakt.tv/oauth/applications" target="_blank" class="help-link">Create Application</a>
+                    </div>
+                </div>
+
+                <!-- MyAnimeList -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>MyAnimeList</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="mal">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Anime and manga database</p>
+                    <div class="service-config" id="mal-config">
+                        <div class="form-group">
+                            <label>Client ID:</label>
+                            <input type="text" id="mal-client-id" placeholder="MAL Client ID" />
+                        </div>
+                        <div class="form-group">
+                            <label>Client Secret:</label>
+                            <input type="password" id="mal-client-secret" placeholder="MAL Client Secret" />
+                        </div>
+                        <div class="form-group">
+                            <label>Localhost URL:</label>
+                            <input type="text" id="mal-localhost" value="http://localhost:8080" />
+                        </div>
+                        <a href="https://myanimelist.net/apiconfig" target="_blank" class="help-link">Create API Application</a>
+                    </div>
+                </div>
+
+                <!-- AniDB -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>AniDB</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="anidb">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Anime database for detailed anime information</p>
+                    <div class="service-config" id="anidb-config">
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" id="anidb-username" placeholder="AniDB Username" />
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="anidb-password" placeholder="AniDB Password" />
+                        </div>
+                        <div class="form-group">
+                            <label>Language:</label>
+                            <select id="anidb-language">
+                                <option value="en">English</option>
+                                <option value="ja">Japanese</option>
+                                <option value="de">German</option>
+                                <option value="fr">French</option>
+                            </select>
+                        </div>
+                        <a href="https://anidb.net/perl-bin/animedb.pl?show=profile" target="_blank" class="help-link">Create Account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Local Services Tab -->
+        <div class="tab-content" id="local-tab">
+            <div class="services-grid">
+                <!-- Radarr -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Radarr</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="radarr">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Movie collection manager</p>
+                    <div class="service-config" id="radarr-config">
+                        <div class="form-group">
+                            <label>Server URL:</label>
+                            <input type="text" id="radarr-url" placeholder="http://192.168.1.100:7878" />
+                        </div>
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="radarr-api-key" placeholder="Radarr API Key" />
+                        </div>
+                        <div class="form-group">
+                            <label>Quality Profile:</label>
+                            <select id="radarr-quality">
+                                <option value="">Select Quality Profile</option>
+                                <option value="HD-1080p">HD - 1080p</option>
+                                <option value="Ultra-HD">Ultra-HD</option>
+                                <option value="HD-720p">HD - 720p</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Root Folder:</label>
+                            <input type="text" id="radarr-root-folder" placeholder="/movies" />
+                        </div>
+                        <div class="checkbox-group">
+                            <label>
+                                <input type="checkbox" id="radarr-add" />
+                                <span>Add missing movies</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="radarr-monitor" />
+                                <span>Monitor added movies</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="radarr-search" />
+                                <span>Search on add</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sonarr -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Sonarr</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="sonarr">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">TV show collection manager</p>
+                    <div class="service-config" id="sonarr-config">
+                        <div class="form-group">
+                            <label>Server URL:</label>
+                            <input type="text" id="sonarr-url" placeholder="http://192.168.1.100:8989" />
+                        </div>
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="sonarr-api-key" placeholder="Sonarr API Key" />
+                        </div>
+                        <div class="form-group">
+                            <label>Quality Profile:</label>
+                            <select id="sonarr-quality">
+                                <option value="">Select Quality Profile</option>
+                                <option value="HD-1080p">HD - 1080p</option>
+                                <option value="HD-720p">HD - 720p</option>
+                                <option value="SD">SD</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Root Folder:</label>
+                            <input type="text" id="sonarr-root-folder" placeholder="/tv" />
+                        </div>
+                        <div class="checkbox-group">
+                            <label>
+                                <input type="checkbox" id="sonarr-add" />
+                                <span>Add missing shows</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="sonarr-monitor" />
+                                <span>Monitor added shows</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="sonarr-search" />
+                                <span>Search on add</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-content" id="notifications-tab">
+            <div class="services-grid">
+                <!-- Notifiarr -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Notifiarr</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="notifiarr">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Unified notification service for media servers</p>
+                    <div class="service-config" id="notifiarr-config">
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="password" id="notifiarr-api-key" placeholder="Notifiarr API Key" />
+                        </div>
+                        <a href="https://notifiarr.com/" target="_blank" class="help-link">Get API Key</a>
+                    </div>
+                </div>
+
+                <!-- Gotify -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Gotify</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="gotify">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Self-hosted notification server</p>
+                    <div class="service-config" id="gotify-config">
+                        <div class="form-group">
+                            <label>Server URL:</label>
+                            <input type="text" id="gotify-url" placeholder="http://gotify.example.com" />
+                        </div>
+                        <div class="form-group">
+                            <label>Token:</label>
+                            <input type="password" id="gotify-token" placeholder="Application Token" />
+                        </div>
+                        <a href="https://gotify.net/" target="_blank" class="help-link">Setup Guide</a>
+                    </div>
+                </div>
+
+                <!-- ntfy -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>ntfy</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="service-toggle" data-service="ntfy">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="service-description">Simple HTTP-based pub-sub notification service</p>
+                    <div class="service-config" id="ntfy-config">
+                        <div class="form-group">
+                            <label>Server URL:</label>
+                            <input type="text" id="ntfy-url" placeholder="https://ntfy.sh" value="https://ntfy.sh" />
+                        </div>
+                        <div class="form-group">
+                            <label>Topic:</label>
+                            <input type="text" id="ntfy-topic" placeholder="kometa-notifications" />
+                        </div>
+                        <div class="form-group">
+                            <label>Token (optional):</label>
+                            <input type="password" id="ntfy-token" placeholder="Access Token" />
+                        </div>
+                        <a href="https://ntfy.sh/" target="_blank" class="help-link">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-navigation">
+        <button class="btn btn-secondary" onclick="navigateToPage('overlays')">Previous</button>
+        <button class="btn btn-primary" onclick="navigateToPage('settings')">Next: Settings</button>
+    </div>
+</div>
+
+<style>
+.services-container {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.services-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.service-tab {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.service-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.service-tab.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.service-card {
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.service-card.enabled {
+    border-color: var(--success-color);
+    background: rgba(46, 160, 67, 0.05);
+}
+
+.service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.service-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-quaternary);
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--success-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.service-description {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+}
+
+.service-config {
+    display: none;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.service-card.enabled .service-config {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    transform: scale(1.1);
+}
+
+.help-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.help-link:hover {
+    text-decoration: underline;
+}
+
+@@media (max-width: 768px) {
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .services-tabs {
+        flex-direction: column;
+    }
+    
+    .service-tab {
+        text-align: center;
+    }
+    
+    .service-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+let servicesConfig = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeServicesPage();
+    loadSavedConfiguration();
+    populateLocalServiceUrls();
+});
+
+function initializeServicesPage() {
+    // Tab switching
+    const serviceTabs = document.querySelectorAll('.service-tab');
+    serviceTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            switchServiceTab(targetTab);
+        });
+    });
+    
+    // Service toggles
+    const serviceToggles = document.querySelectorAll('.service-toggle');
+    serviceToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const serviceName = this.getAttribute('data-service');
+            toggleService(serviceName, this.checked);
+        });
+    });
+    
+    // Input change handlers
+    document.addEventListener('input', handleServiceConfigChange);
+    document.addEventListener('change', handleServiceConfigChange);
+}
+
+function switchServiceTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.service-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
+function toggleService(serviceName, enabled) {
+    const serviceCard = document.querySelector(`[data-service="${serviceName}"]`).closest('.service-card');
+    
+    if (enabled) {
+        serviceCard.classList.add('enabled');
+        if (!servicesConfig[serviceName]) {
+            servicesConfig[serviceName] = {};
+        }
+        servicesConfig[serviceName].enabled = true;
+    } else {
+        serviceCard.classList.remove('enabled');
+        if (servicesConfig[serviceName]) {
+            servicesConfig[serviceName].enabled = false;
+        }
+    }
+    
+    saveConfiguration();
+    syncWithSignalR();
+}
+
+function handleServiceConfigChange(event) {
+    const target = event.target;
+    if (!target.id) return;
+    
+    const parts = target.id.split('-');
+    if (parts.length < 2) return;
+    
+    const serviceName = parts[0];
+    const configKey = parts.slice(1).join('_');
+    
+    if (!servicesConfig[serviceName]) {
+        servicesConfig[serviceName] = {};
+    }
+    
+    let value;
+    if (target.type === 'checkbox') {
+        value = target.checked;
+    } else if (target.type === 'number') {
+        value = parseInt(target.value);
+    } else {
+        value = target.value;
+    }
+    
+    servicesConfig[serviceName][configKey] = value;
+    
+    saveConfiguration();
+    syncWithSignalR();
+}
+
+function populateLocalServiceUrls() {
+    // Get Plex server IP from localStorage or previous configuration
+    const connectionData = JSON.parse(localStorage.getItem('connectionData') || '{}');
+    const plexIp = connectionData.plexServerIp || '192.168.1.100';
+    
+    // Set default URLs for local services
+    const localServices = {
+        'tautulli-url': `http://${plexIp}:8181`,
+        'radarr-url': `http://${plexIp}:7878`,
+        'sonarr-url': `http://${plexIp}:8989`
+    };
+    
+    Object.entries(localServices).forEach(([fieldId, defaultUrl]) => {
+        const field = document.getElementById(fieldId);
+        if (field && !field.value) {
+            field.value = defaultUrl;
+        }
+    });
+}
+
+function saveConfiguration() {
+    localStorage.setItem('servicesConfiguration', JSON.stringify(servicesConfig));
+}
+
+function loadSavedConfiguration() {
+    const saved = localStorage.getItem('servicesConfiguration');
+    if (saved) {
+        servicesConfig = JSON.parse(saved);
+        
+        // Apply saved configuration to UI
+        Object.entries(servicesConfig).forEach(([serviceName, config]) => {
+            if (config.enabled) {
+                const toggle = document.querySelector(`[data-service="${serviceName}"]`);
+                if (toggle) {
+                    toggle.checked = true;
+                    toggle.closest('.service-card').classList.add('enabled');
+                }
+            }
+            
+            // Set individual config values
+            Object.entries(config).forEach(([key, value]) => {
+                if (key === 'enabled') return;
+                
+                const fieldId = `${serviceName}-${key.replace('_', '-')}`;
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    if (field.type === 'checkbox') {
+                        field.checked = value;
+                    } else {
+                        field.value = value;
+                    }
+                }
+            });
+        });
+    }
+}
+
+function syncWithSignalR() {
+    if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+        window.connection.invoke('UpdateConfiguration', 'services', servicesConfig);
+    }
+}
+
+function navigateToPage(page) {
+    // Sync current state before navigation
+    if (window.connection && window.connection.state === signalR.HubConnectionState.Connected) {
+        window.connection.invoke('PageChanged', page);
+    }
+    
+    // Navigate to the page
+    window.location.href = '/' + page;
+}
+
+// Service validation functions
+function validateApiKey(serviceName, apiKey) {
+    if (!apiKey || apiKey.trim() === '') {
+        return { valid: false, message: 'API key is required' };
+    }
+    
+    // Basic validation based on service
+    switch (serviceName) {
+        case 'tmdb':
+            if (apiKey.length !== 32) {
+                return { valid: false, message: 'TMDb API key should be 32 characters' };
+            }
+            break;
+        case 'trakt':
+            if (apiKey.length !== 64) {
+                return { valid: false, message: 'Trakt Client ID should be 64 characters' };
+            }
+            break;
+    }
+    
+    return { valid: true };
+}
+
+function validateUrl(url) {
+    try {
+        new URL(url);
+        return { valid: true };
+    } catch {
+        return { valid: false, message: 'Invalid URL format' };
+    }
+}
+
+// Test service connections
+function testServiceConnection(serviceName) {
+    const config = servicesConfig[serviceName];
+    if (!config || !config.enabled) {
+        return;
+    }
+    
+    // This would typically make an API call to test the connection
+    // For now, just show a placeholder message
+    console.log(`Testing ${serviceName} connection...`, config);
+    
+    // You could implement actual API testing here
+    // Example: await fetch(config.url + '/api/test', { headers: { 'X-API-Key': config.api_key } });
+}
+</script>

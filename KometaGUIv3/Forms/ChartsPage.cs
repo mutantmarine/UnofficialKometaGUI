@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using KometaGUIv3.Models;
+using KometaGUIv3.Shared.Models;
 using KometaGUIv3.Utils;
 
 namespace KometaGUIv3.Forms
