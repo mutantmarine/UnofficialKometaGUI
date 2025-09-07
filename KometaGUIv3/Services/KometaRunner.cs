@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Management;
 using System.Threading.Tasks;
 using KometaGUIv3.Shared.Models;
 
@@ -108,12 +110,15 @@ namespace KometaGUIv3.Services
             {
                 try
                 {
-                    kometaProcess.Kill();
-                    LogReceived?.Invoke(this, "Kometa execution stopped by user.");
+                    LogReceived?.Invoke(this, "Stopping Kometa and all related processes...");
                     
-                    // Deactivate virtual environment after stopping
-                    LogReceived?.Invoke(this, "Deactivating virtual environment...");
-                    DeactivateVirtualEnvironment();
+                    // Kill the entire process tree to ensure all child processes are terminated
+                    KillProcessTree(kometaProcess.Id);
+                    
+                    // Also kill any remaining python processes that might be running kometa.py
+                    KillKometaPythonProcesses();
+                    
+                    LogReceived?.Invoke(this, "Kometa execution stopped by user.");
                 }
                 catch (Exception ex)
                 {
@@ -122,30 +127,98 @@ namespace KometaGUIv3.Services
             }
         }
 
-        private async void DeactivateVirtualEnvironment()
+        private void KillProcessTree(int processId)
         {
             try
             {
-                var deactivateCommand = "deactivate";
-                var startInfo = new ProcessStartInfo
+                // Use WMI to find and kill all child processes
+                using (var searcher = new ManagementObjectSearcher($"SELECT * FROM Win32_Process WHERE ParentProcessId={processId}"))
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-Command \"{deactivateCommand}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using (var process = Process.Start(startInfo))
+                    using (var results = searcher.Get())
+                    {
+                        foreach (ManagementObject mo in results)
+                        {
+                            var childProcessId = Convert.ToInt32(mo["ProcessId"]);
+                            KillProcessTree(childProcessId); // Recursively kill child processes
+                            
+                            try
+                            {
+                                var childProcess = Process.GetProcessById(childProcessId);
+                                if (!childProcess.HasExited)
+                                {
+                                    childProcess.Kill();
+                                    LogReceived?.Invoke(this, $"Terminated child process: {childProcess.ProcessName} (ID: {childProcessId})");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LogReceived?.Invoke(this, $"Could not terminate child process {childProcessId}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+                
+                // Kill the parent process
+                try
                 {
-                    await Task.Run(() => process.WaitForExit());
-                    LogReceived?.Invoke(this, "Virtual environment deactivated.");
+                    var process = Process.GetProcessById(processId);
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        LogReceived?.Invoke(this, $"Terminated parent process: {process.ProcessName} (ID: {processId})");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogReceived?.Invoke(this, $"Could not terminate parent process {processId}: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                LogReceived?.Invoke(this, $"Error deactivating virtual environment: {ex.Message}");
+                LogReceived?.Invoke(this, $"Error killing process tree: {ex.Message}");
+            }
+        }
+
+        private void KillKometaPythonProcesses()
+        {
+            try
+            {
+                // Find any python processes that might be running kometa.py
+                var pythonProcesses = Process.GetProcessesByName("python");
+                
+                foreach (var process in pythonProcesses)
+                {
+                    try
+                    {
+                        // Check if this python process has kometa in its command line
+                        using (var searcher = new ManagementObjectSearcher($"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}"))
+                        {
+                            using (var results = searcher.Get())
+                            {
+                                foreach (ManagementObject mo in results)
+                                {
+                                    var commandLine = mo["CommandLine"]?.ToString() ?? "";
+                                    if (commandLine.Contains("kometa.py"))
+                                    {
+                                        if (!process.HasExited)
+                                        {
+                                            process.Kill();
+                                            LogReceived?.Invoke(this, $"Terminated Kometa Python process (ID: {process.Id})");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogReceived?.Invoke(this, $"Could not check/terminate Python process {process.Id}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogReceived?.Invoke(this, $"Error killing Kometa Python processes: {ex.Message}");
             }
         }
 

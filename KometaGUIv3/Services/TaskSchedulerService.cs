@@ -1,37 +1,37 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using KometaGUIv3.Shared.Models;
 
 namespace KometaGUIv3.Services
 {
     public class TaskSchedulerService
     {
-        public bool CreateScheduledTask(KometaProfile profile, string configPath, ScheduleFrequency frequency, int interval)
+        public bool CreateScheduledTask(KometaProfile profile, string configPath, ScheduleFrequency frequency, int interval, string time = "02:00")
         {
             try
             {
                 var taskName = $"Kometa_{profile.Name}";
-                var kometaPath = FindKometaExecutable(profile.KometaDirectory);
                 
-                if (string.IsNullOrEmpty(kometaPath))
+                // Validate Kometa directory exists
+                if (string.IsNullOrEmpty(profile.KometaDirectory) || !Directory.Exists(profile.KometaDirectory))
                 {
-                    throw new Exception("Kometa executable not found");
+                    throw new Exception("Kometa directory not found or not set");
                 }
 
-                // Build the command to run
-                string command;
-                string arguments;
+                // Build the command to run using virtual environment Python
+                var kometaDirectory = profile.KometaDirectory;
+                var venvPythonPath = Path.Combine(kometaDirectory, "kometa-venv", "Scripts", "python.exe");
+                var kometaPyPath = Path.Combine(kometaDirectory, "kometa.py");
                 
-                if (kometaPath.EndsWith(".py"))
-                {
-                    command = "python";
-                    arguments = $"\"{kometaPath}\" --config \"{configPath}\"";
-                }
-                else
-                {
-                    command = kometaPath;
-                    arguments = $"--config \"{configPath}\"";
-                }
+                string command = venvPythonPath;
+                string arguments = $"\"{kometaPyPath}\" -r";
+                
+                // Set working directory for the task
+                var workingDirectory = kometaDirectory;
+
+                // Convert time from HHMM to HH:MM format
+                var formattedTime = time.Length == 4 ? $"{time.Substring(0, 2)}:{time.Substring(2, 2)}" : time;
 
                 // Build schtasks command
                 var scheduleType = frequency switch
@@ -44,14 +44,20 @@ namespace KometaGUIv3.Services
 
                 var intervalParam = frequency switch
                 {
-                    ScheduleFrequency.Daily => $"/RI {interval}",
-                    ScheduleFrequency.Weekly => $"/RI {interval}",
+                    ScheduleFrequency.Daily => interval > 1 ? $"/MO {interval}" : "",
+                    ScheduleFrequency.Weekly => interval > 1 ? $"/MO {interval}" : "",
                     ScheduleFrequency.Monthly => $"/M {interval}",
-                    _ => "/RI 1"
+                    _ => ""
                 };
 
                 var schtasksArgs = $"/CREATE /TN \"{taskName}\" /TR \"\\\"{command}\\\" {arguments}\" " +
-                                 $"/SC {scheduleType} {intervalParam} /ST 02:00 /F";
+                                 $"/SC {scheduleType} {(string.IsNullOrEmpty(intervalParam) ? "" : " " + intervalParam)} /ST {formattedTime} /SD {DateTime.Today:MM/dd/yyyy} /F";
+
+                // Debug output
+                System.Diagnostics.Debug.WriteLine($"Task Name: {taskName}");
+                System.Diagnostics.Debug.WriteLine($"Command: {command}");
+                System.Diagnostics.Debug.WriteLine($"Arguments: {arguments}");
+                System.Diagnostics.Debug.WriteLine($"Full schtasks args: {schtasksArgs}");
 
                 var processInfo = new ProcessStartInfo
                 {
@@ -66,7 +72,16 @@ namespace KometaGUIv3.Services
                 using (var process = Process.Start(processInfo))
                 {
                     process.WaitForExit();
-                    return process.ExitCode == 0;
+                    
+                    if (process.ExitCode != 0)
+                    {
+                        var error = process.StandardError.ReadToEnd();
+                        var output = process.StandardOutput.ReadToEnd();
+                        var errorDetails = !string.IsNullOrEmpty(error) ? error : output;
+                        throw new Exception($"schtasks failed with exit code {process.ExitCode}: {errorDetails}");
+                    }
+                    
+                    return true;
                 }
             }
             catch (Exception ex)

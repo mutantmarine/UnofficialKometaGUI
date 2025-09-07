@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KometaGUIv3.Services;
@@ -27,7 +28,8 @@ namespace KometaGUIv3.Forms
         private Button btnInstallKometa, btnCheckInstallation, btnUpdateKometa;
         private ComboBox cmbScheduleFrequency;
         private NumericUpDown numScheduleInterval;
-        private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus, lblTimeUnit;
+        private TextBox txtScheduleTime;
+        private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus;
         private ProgressBar progressBar, installationProgressBar;
 
         public FinalActionsPage(KometaProfile profile, ProfileManager profileManager)
@@ -189,55 +191,59 @@ namespace KometaGUIv3.Forms
                 Enabled = false
             };
 
-            // Row 2: Scheduling
+            // Row 2: Scheduling - New format: Schedule: Every [number] [unit] at [time]
             var lblSchedule = new Label
             {
-                Text = "Schedule:",
-                Size = new Size(60, 20),
+                Text = "Schedule: Every",
+                Size = new Size(95, 20),
                 Location = new Point(20, 85),
-                ForeColor = DarkTheme.TextColor
-            };
-
-            cmbScheduleFrequency = new ComboBox
-            {
-                Size = new Size(80, 25),
-                Location = new Point(85, 82),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cmbScheduleFrequency.Items.AddRange(new[] { "Daily", "Weekly", "Monthly" });
-            cmbScheduleFrequency.SelectedIndex = 0;
-            cmbScheduleFrequency.SelectedIndexChanged += CmbScheduleFrequency_SelectedIndexChanged;
-
-            var lblEvery = new Label
-            {
-                Text = "Every:",
-                Size = new Size(45, 20),
-                Location = new Point(175, 85),
                 ForeColor = DarkTheme.TextColor
             };
 
             numScheduleInterval = new NumericUpDown
             {
                 Size = new Size(50, 25),
-                Location = new Point(225, 82),
+                Location = new Point(120, 82),
                 Minimum = 1,
-                Maximum = 30,
+                Maximum = 31,
                 Value = 1
             };
 
-            lblTimeUnit = new Label
+            cmbScheduleFrequency = new ComboBox
             {
-                Text = "day(s)",
-                Size = new Size(65, 20),
-                Location = new Point(285, 85),
+                Size = new Size(80, 25),
+                Location = new Point(175, 82),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbScheduleFrequency.Items.AddRange(new[] { "day(s)", "week(s)", "month(s)" });
+            cmbScheduleFrequency.SelectedIndex = 0;
+            cmbScheduleFrequency.SelectedIndexChanged += CmbScheduleFrequency_SelectedIndexChanged;
+
+            var lblAt = new Label
+            {
+                Text = "at",
+                Size = new Size(20, 20),
+                Location = new Point(265, 85),
                 ForeColor = DarkTheme.TextColor
             };
+
+            txtScheduleTime = new TextBox
+            {
+                Size = new Size(50, 25),
+                Location = new Point(290, 82),
+                Text = DateTime.Now.ToString("HHmm"), // Pre-populate with current time
+                MaxLength = 4,
+                Font = new Font("Consolas", 9F)
+            };
+            txtScheduleTime.TextChanged += TxtScheduleTime_TextChanged;
+
+            // Remove the lblTimeUnit as it's now part of the dropdown
 
             btnCreateSchedule = new Button
             {
                 Text = "Create Schedule",
-                Size = new Size(100, 30),
-                Location = new Point(385, 80)
+                Size = new Size(110, 30),
+                Location = new Point(350, 80)
             };
 
             btnRemoveSchedule = new Button
@@ -281,7 +287,7 @@ namespace KometaGUIv3.Forms
 
             actionsPanel.Controls.AddRange(new Control[] {
                 btnGenerateYaml, btnRunKometa, btnStopKometa,
-                lblSchedule, cmbScheduleFrequency, lblEvery, numScheduleInterval, lblTimeUnit, btnCreateSchedule,
+                lblSchedule, numScheduleInterval, cmbScheduleFrequency, lblAt, txtScheduleTime, btnCreateSchedule,
                 btnRemoveSchedule, lblScheduleStatus,
                 btnStartLocalhost, btnPayPal, lblLocalhostStatus
             });
@@ -485,6 +491,26 @@ namespace KometaGUIv3.Forms
         {
             try
             {
+                // Validate time input
+                if (string.IsNullOrWhiteSpace(txtScheduleTime.Text) || txtScheduleTime.Text.Length != 4)
+                {
+                    MessageBox.Show("Please enter a valid 4-digit time in HHMM format (e.g., 0900 for 9:00 AM).", 
+                        "Invalid Time", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtScheduleTime.Focus();
+                    return;
+                }
+
+                // Validate time format
+                if (!int.TryParse(txtScheduleTime.Text.Substring(0, 2), out int hours) || 
+                    !int.TryParse(txtScheduleTime.Text.Substring(2, 2), out int minutes) ||
+                    hours < 0 || hours > 23 || minutes < 0 || minutes > 59)
+                {
+                    MessageBox.Show("Please enter a valid time in HHMM format (0000-2359).", 
+                        "Invalid Time", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtScheduleTime.Focus();
+                    return;
+                }
+
                 // Generate and save config file
                 profileManager.SaveProfile(profile);
                 var yamlContent = yamlGenerator.GenerateKometaConfig(profile);
@@ -496,12 +522,13 @@ namespace KometaGUIv3.Forms
 
                 var frequency = (ScheduleFrequency)cmbScheduleFrequency.SelectedIndex;
                 var interval = (int)numScheduleInterval.Value;
+                var time = txtScheduleTime.Text;
 
-                var success = taskScheduler.CreateScheduledTask(profile, configPath, frequency, interval);
+                var success = taskScheduler.CreateScheduledTask(profile, configPath, frequency, interval, time);
 
                 if (success)
                 {
-                    LogMessage($"Scheduled task created successfully for profile '{profile.Name}'");
+                    LogMessage($"Scheduled task created successfully for profile '{profile.Name}' at {time.Substring(0, 2)}:{time.Substring(2, 2)}");
                     UpdateScheduleStatus();
                     MessageBox.Show("Scheduled task created successfully!", "Success", 
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1057,20 +1084,55 @@ namespace KometaGUIv3.Forms
 
         private void CmbScheduleFrequency_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (cmbScheduleFrequency.SelectedIndex)
+            // No longer need to update lblTimeUnit since the dropdown now contains the full text
+            // The dropdown items are already "day(s)", "week(s)", "month(s)"
+        }
+
+        private void TxtScheduleTime_TextChanged(object sender, EventArgs e)
+        {
+            // Validate 4-digit time format (HHMM)
+            var textBox = sender as TextBox;
+            if (textBox == null) return;
+
+            var input = textBox.Text;
+            
+            // Only allow numeric input
+            if (!string.IsNullOrEmpty(input) && !input.All(char.IsDigit))
             {
-                case 0: // Daily
-                    lblTimeUnit.Text = "day(s)";
-                    break;
-                case 1: // Weekly
-                    lblTimeUnit.Text = "week(s)";
-                    break;
-                case 2: // Monthly
-                    lblTimeUnit.Text = "month(s)";
-                    break;
-                default:
-                    lblTimeUnit.Text = "day(s)";
-                    break;
+                // Remove non-numeric characters
+                var numericOnly = new string(input.Where(char.IsDigit).ToArray());
+                textBox.Text = numericOnly;
+                textBox.SelectionStart = textBox.Text.Length;
+                return;
+            }
+
+            // Validate time format when length is 4
+            if (input.Length == 4)
+            {
+                if (int.TryParse(input.Substring(0, 2), out int hours) && 
+                    int.TryParse(input.Substring(2, 2), out int minutes))
+                {
+                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59)
+                    {
+                        textBox.BackColor = DarkTheme.InputBackColor; // Valid time
+                    }
+                    else
+                    {
+                        textBox.BackColor = Color.LightCoral; // Invalid time
+                    }
+                }
+                else
+                {
+                    textBox.BackColor = Color.LightCoral; // Invalid format
+                }
+            }
+            else if (input.Length > 0)
+            {
+                textBox.BackColor = Color.LightYellow; // Incomplete
+            }
+            else
+            {
+                textBox.BackColor = DarkTheme.InputBackColor; // Empty/default
             }
         }
 
