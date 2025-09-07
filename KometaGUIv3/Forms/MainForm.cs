@@ -15,6 +15,7 @@ namespace KometaGUIv3.Forms
         private Button btnBack, btnNext;
         private Label lblCurrentPage;
         private ProfileManager profileManager;
+        private ApplicationSettingsManager settingsManager;
         private KometaProfile currentProfile;
         private int currentPageIndex = 0;
         
@@ -33,9 +34,13 @@ namespace KometaGUIv3.Forms
         {
             InitializeComponent();
             profileManager = new ProfileManager();
+            settingsManager = new ApplicationSettingsManager();
             SetupForm();
             SetupNavigation();
-            ShowPage(0); // Start with welcome page
+            
+            // Check if this is the first run
+            int startingPage = settingsManager.HasShownWelcome() ? 1 : 0; // Skip to profile management if welcome already shown
+            ShowPage(startingPage);
         }
 
         private void SetupForm()
@@ -118,6 +123,9 @@ namespace KometaGUIv3.Forms
             btnNext.Text = (pageIndex == pageNames.Length - 1) ? "Finish" : "Next";
             lblCurrentPage.Text = $"{pageNames[pageIndex]} ({pageIndex + 1}/{pageNames.Length})";
             
+            // Handle back button visibility - hide on welcome page
+            btnBack.Visible = pageIndex > 0;
+            
             // Load appropriate page content
             switch (pageIndex)
             {
@@ -182,7 +190,7 @@ Key Features:
 • Optional service integrations (Tautulli, Radarr, Sonarr, etc.)
 • YAML configuration generation
 • Built-in Kometa execution and scheduling
-• Real-time localhost web server with full feature parity
+• Professional dark theme interface
 
 This guided setup will help you create professional media library configurations with ease.",
                 Font = DarkTheme.GetDefaultFont(),
@@ -200,7 +208,10 @@ This guided setup will help you create professional media library configurations
                 Name = "btnPrimary"
             };
 
-            letsGoBtn.Click += (s, e) => ShowPage(1);
+            letsGoBtn.Click += (s, e) => {
+                settingsManager.MarkWelcomeShown(); // Mark welcome as shown
+                ShowPage(1);
+            };
 
             welcomePanel.Controls.AddRange(new Control[] { titleLabel, descriptionLabel, letsGoBtn });
             DarkTheme.ApplyDarkTheme(welcomePanel);

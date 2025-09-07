@@ -20,7 +20,6 @@ namespace KometaGUIv3.Forms
         private ProfileManager profileManager;
         private KometaInstaller kometaInstaller;
         private SystemRequirements systemRequirements;
-        private LocalhostServerManager localhostServerManager;
 
         // UI Controls
         private RichTextBox rtbLogs;
@@ -40,7 +39,6 @@ namespace KometaGUIv3.Forms
             this.taskScheduler = new TaskSchedulerService();
             this.kometaInstaller = new KometaInstaller();
             this.systemRequirements = new SystemRequirements();
-            this.localhostServerManager = new LocalhostServerManager(profileManager);
 
             InitializeComponent();
             SetupControls();
@@ -87,7 +85,7 @@ namespace KometaGUIv3.Forms
 
             var descriptionLabel = new Label
             {
-                Text = "Generate your configuration, run Kometa, schedule automatic execution, and manage the localhost server.",
+                Text = "Generate your configuration, run Kometa, and schedule automatic execution.",
                 Font = DarkTheme.GetDefaultFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(900, 30),
@@ -368,11 +366,6 @@ namespace KometaGUIv3.Forms
             kometaInstaller.LogReceived += KometaInstaller_LogReceived;
             kometaInstaller.ProgressChanged += KometaInstaller_ProgressChanged;
             systemRequirements.LogReceived += SystemRequirements_LogReceived;
-            
-            // LocalhostServerManager event handlers
-            localhostServerManager.ServerStatusChanged += LocalhostServerManager_ServerStatusChanged;
-            localhostServerManager.ServerLogReceived += LocalhostServerManager_ServerLogReceived;
-            localhostServerManager.ServerError += LocalhostServerManager_ServerError;
         }
 
         private void BtnGenerateYaml_Click(object sender, EventArgs e)
@@ -556,73 +549,10 @@ namespace KometaGUIv3.Forms
             }
         }
 
-        private async void BtnStartLocalhost_Click(object sender, EventArgs e)
+        private void BtnStartLocalhost_Click(object sender, EventArgs e)
         {
-            if (!localhostServerManager.IsServerRunning)
-            {
-                // Enable localhost server
-                try
-                {
-                    LogMessage("Starting localhost server on port 6969...");
-                    btnStartLocalhost.Enabled = false;
-                    
-                    var success = await localhostServerManager.StartServerAsync(6969);
-                    
-                    if (success)
-                    {
-                        LogMessage("Localhost server started successfully!");
-                        LogMessage($"Web interface available at: {localhostServerManager.ServerUrl}");
-                        
-                        // Automatically open browser
-                        try
-                        {
-                            localhostServerManager.OpenInBrowser();
-                        }
-                        catch (Exception browserEx)
-                        {
-                            LogMessage($"Could not automatically open browser: {browserEx.Message}");
-                        }
-                    }
-                    else
-                    {
-                        LogMessage("Failed to start localhost server. Please check the logs for details.");
-                        MessageBox.Show("Failed to start localhost server. Please check the logs for details.", 
-                            "Server Start Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogMessage($"Error starting localhost server: {ex.Message}");
-                    MessageBox.Show($"Error starting localhost server: {ex.Message}", 
-                        "Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                finally
-                {
-                    btnStartLocalhost.Enabled = true;
-                }
-            }
-            else
-            {
-                // Disable localhost server
-                try
-                {
-                    LogMessage("Stopping localhost server...");
-                    btnStartLocalhost.Enabled = false;
-                    
-                    await localhostServerManager.StopServerAsync();
-                    LogMessage("Localhost server stopped.");
-                }
-                catch (Exception ex)
-                {
-                    LogMessage($"Error stopping localhost server: {ex.Message}");
-                    MessageBox.Show($"Error stopping localhost server: {ex.Message}", 
-                        "Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                finally
-                {
-                    btnStartLocalhost.Enabled = true;
-                }
-            }
+            MessageBox.Show("This feature has not been implemented yet.", 
+                "Feature Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnPayPal_Click(object sender, EventArgs e)
@@ -1144,40 +1074,6 @@ namespace KometaGUIv3.Forms
             }
         }
 
-        private void LocalhostServerManager_ServerStatusChanged(object sender, bool isRunning)
-        {
-            SafeUpdateUI(() =>
-            {
-                if (isRunning)
-                {
-                    btnStartLocalhost.Text = "Disable Local Server";
-                    lblLocalhostStatus.Text = $"Server: Running on {localhostServerManager.ServerUrl}";
-                    lblLocalhostStatus.ForeColor = Color.LightGreen;
-                }
-                else
-                {
-                    btnStartLocalhost.Text = "Enable Local Server";
-                    lblLocalhostStatus.Text = "Server: Stopped";
-                    lblLocalhostStatus.ForeColor = Color.Red;
-                }
-            });
-        }
-
-        private void LocalhostServerManager_ServerLogReceived(object sender, string logMessage)
-        {
-            SafeUpdateUI(() =>
-            {
-                LogMessage($"[Server] {logMessage}");
-            });
-        }
-
-        private void LocalhostServerManager_ServerError(object sender, string errorMessage)
-        {
-            SafeUpdateUI(() =>
-            {
-                LogMessage($"[Server Error] {errorMessage}");
-            });
-        }
 
         public void SaveProfileData()
         {

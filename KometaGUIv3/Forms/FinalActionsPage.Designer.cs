@@ -12,8 +12,6 @@ namespace KometaGUIv3.Forms
                 {
                     components.Dispose();
                 }
-                // Dispose the localhost server manager to clean up resources
-                localhostServerManager?.Dispose();
             }
             base.Dispose(disposing);
         }
