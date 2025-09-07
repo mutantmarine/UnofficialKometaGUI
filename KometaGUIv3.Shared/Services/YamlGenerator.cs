@@ -362,8 +362,8 @@ namespace KometaGUIv3.Shared.Services
             var operations = new List<string>();
             
             // Check for rating overlays and determine operations needed - only if advanced variables are enabled
-            var ratingOverlay = relevantOverlays.FirstOrDefault(o => o.Key.Contains("ratings"));
-            if (ratingOverlay.Value != null && ratingOverlay.Value.UseAdvancedVariables)
+            var ratingOverlay = relevantOverlays.FirstOrDefault(o => o.Key.Contains("ratings") && o.Value?.UseAdvancedVariables == true);
+            if (ratingOverlay.Value != null)
             {
                 var builderLevel = ratingOverlay.Value.BuilderLevel ?? "show";
                 
@@ -372,25 +372,13 @@ namespace KometaGUIv3.Shared.Services
                 bool hasRating2 = ratingOverlay.Value.TemplateVariables.ContainsKey("rating2");
                 bool hasRating3 = ratingOverlay.Value.TemplateVariables.ContainsKey("rating3");
                 
-                if (builderLevel == "episode")
-                {
-                    // Episode-level operations
-                    if (hasRating1 && ratingOverlay.Value.TemplateVariables["rating1"].ToString() == "critic")
-                        operations.Add("      mass_episode_critic_rating_update: imdb");
-                    if (hasRating2 && ratingOverlay.Value.TemplateVariables["rating2"].ToString() == "audience")
-                        operations.Add("      mass_episode_audience_rating_update: tmdb");
-                }
-                else if (builderLevel == "show" || string.IsNullOrEmpty(builderLevel))
-                {
-                    // Show-level operations (also applies to Movies)
-                    if (hasRating1 && ratingOverlay.Value.TemplateVariables["rating1"].ToString() == "user")
-                        operations.Add("      mass_user_rating_update: mdb_tomatoes");
-                    if (hasRating2 && ratingOverlay.Value.TemplateVariables["rating2"].ToString() == "critic")
-                        operations.Add("      mass_critic_rating_update: imdb");
-                    if (hasRating3 && ratingOverlay.Value.TemplateVariables["rating3"].ToString() == "audience")
-                        operations.Add("      mass_audience_rating_update: tmdb");
-                }
-                // Season level doesn't need operations
+                // Generate standard operations regardless of builder level
+                if (hasRating1 && ratingOverlay.Value.TemplateVariables["rating1"].ToString() == "user")
+                    operations.Add("      mass_user_rating_update: mdb_tomatoes");
+                if (hasRating2 && ratingOverlay.Value.TemplateVariables["rating2"].ToString() == "critic")
+                    operations.Add("      mass_critic_rating_update: imdb");
+                if (hasRating3 && ratingOverlay.Value.TemplateVariables["rating3"].ToString() == "audience")
+                    operations.Add("      mass_audience_rating_update: tmdb");
             }
             
             // Add operations section if any operations are needed

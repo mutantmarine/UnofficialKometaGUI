@@ -144,7 +144,8 @@
       "Bash(wmic:*)",
       "Bash(netstat:*)",
       "Bash(tasklist)",
-      "Bash(del \"KometaGUIv3\\Services\\HttpServerManager.cs\")"
+      "Bash(del \"KometaGUIv3\\Services\\HttpServerManager.cs\")",
+      "Bash(del \"C:\\Users\\1994c\\source\\repos\\KometaGUIv3\\KometaGUIv3.Shared\\obj\\Debug\\net8.0\\ref\\KometaGUIv3.Shared.dll\")"
     ],
     "deny": [],
     "ask": []
