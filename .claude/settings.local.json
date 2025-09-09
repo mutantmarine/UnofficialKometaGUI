@@ -153,7 +153,9 @@
       "Bash(find:*)",
       "WebFetch(domain:forums.plex.tv)",
       "Bash(del \"C:\\Users\\1994c\\source\\repos\\KometaGUIv3\\KometaGUIv3\\Services\\PlexService_Legacy_Backup.cs\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git reset:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
