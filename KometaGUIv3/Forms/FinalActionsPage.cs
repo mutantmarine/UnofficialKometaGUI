@@ -404,7 +404,7 @@ namespace KometaGUIv3.Forms
                     saveDialog.FileName = "config.yml";
                     saveDialog.DefaultExt = "yml";
                     saveDialog.InitialDirectory = configDirectory;
-                    saveDialog.Title = "Save Kometa Configuration";
+                    saveDialog.Title = "Save Unofficial Kometa GUI Configuration";
 
                     if (saveDialog.ShowDialog() == DialogResult.OK)
                     {
@@ -628,12 +628,14 @@ namespace KometaGUIv3.Forms
                 lblScheduleStatus.Text = "Status: Task scheduled";
                 lblScheduleStatus.ForeColor = Color.LightGreen;
                 btnRemoveSchedule.Enabled = true;
+                btnCreateSchedule.Enabled = false; // Disable create when task exists
             }
             else
             {
                 lblScheduleStatus.Text = "Status: No scheduled task";
                 lblScheduleStatus.ForeColor = Color.Orange;
                 btnRemoveSchedule.Enabled = false;
+                btnCreateSchedule.Enabled = true; // Enable create when no task
             }
         }
 

@@ -145,7 +145,15 @@
       "Bash(netstat:*)",
       "Bash(tasklist)",
       "Bash(del \"KometaGUIv3\\Services\\HttpServerManager.cs\")",
-      "Bash(del \"C:\\Users\\1994c\\source\\repos\\KometaGUIv3\\KometaGUIv3.Shared\\obj\\Debug\\net8.0\\ref\\KometaGUIv3.Shared.dll\")"
+      "Bash(del \"C:\\Users\\1994c\\source\\repos\\KometaGUIv3\\KometaGUIv3.Shared\\obj\\Debug\\net8.0\\ref\\KometaGUIv3.Shared.dll\")",
+      "Bash(dotnet publish:*)",
+      "Bash(zip:*)",
+      "Read(//c/Users/1994c/AppData/Roaming//**)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:forums.plex.tv)",
+      "Bash(del \"C:\\Users\\1994c\\source\\repos\\KometaGUIv3\\KometaGUIv3\\Services\\PlexService_Legacy_Backup.cs\")",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

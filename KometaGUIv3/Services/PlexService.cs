@@ -18,36 +18,22 @@ namespace KometaGUIv3.Services
         private static readonly Dictionary<string, CachedLibraries> libraryCache = new Dictionary<string, CachedLibraries>();
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10); // Cache for 10 minutes
 
-        public async Task<string> AuthenticateUser(string email, string password)
+        public async Task<bool> ValidateToken(string token)
         {
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
             try
             {
-                var authData = new
-                {
-                    user = new { login = email, password = password }
-                };
-
-                var json = JsonConvert.SerializeObject(authData);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                content.Headers.Add("X-Plex-Product", "Kometa GUI v3");
-                content.Headers.Add("X-Plex-Version", "1.0");
-                content.Headers.Add("X-Plex-Client-Identifier", Guid.NewGuid().ToString());
-
-                var response = await httpClient.PostAsync($"{PlexTvUrl}/users/sign_in.json", content);
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{PlexTvUrl}/api/v2/user");
+                request.Headers.Add("X-Plex-Token", token);
                 
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    dynamic result = JsonConvert.DeserializeObject(responseJson);
-                    return result?.user?.authentication_token?.ToString();
-                }
-                
-                return null;
+                var response = await httpClient.SendAsync(request);
+                return response.StatusCode == System.Net.HttpStatusCode.OK;
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception($"Authentication failed: {ex.Message}");
+                return false;
             }
         }
 

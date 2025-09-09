@@ -1,7 +1,7 @@
-# Kometa GUI v3 - Application Requirements
+# Unofficial Kometa GUI - Application Requirements
 
 ## Overview
-A dark-themed Windows GUI application that provides all Kometa capabilities through a user-friendly interface. The app generates YAML configuration files, manages localhost servers, creates Windows scheduled tasks, and executes the Kometa Python program.
+A dark-themed Windows GUI application that provides all Kometa capabilities through a user-friendly interface. The app generates YAML configuration files, creates Windows scheduled tasks, and executes the Kometa Python program.
 
 ## Core Architecture
 - Multiple C# files with different methods for maintainability
@@ -60,7 +60,6 @@ A dark-themed Windows GUI application that provides all Kometa capabilities thro
 - **Run Kometa** button  
 - **Schedule/Remove Scheduled Task** (with frequency options: days/weeks/months)
 - **PayPal** button (links to paypal.com)
-- **Start Localhost** button (starts localhost:6969)
 - **Log Area** - Shows Kometa execution output in real-time
 
 ## Default Configuration Template
@@ -88,7 +87,7 @@ Based on the provided YAML template, the app needs to handle:
 - **Radarr:** URL, token, various add/monitor/upgrade settings, paths
 - **Sonarr:** URL, token, various add/monitor/upgrade settings, paths
 - **Trakt:** Client ID, client secret, pin, authorization section
-- **MAL:** Client ID, client secret, cache expiration, localhost URL
+- **MAL:** Client ID, client secret, cache expiration
 
 ### Settings Configuration
 Extensive settings including:
@@ -105,7 +104,6 @@ Extensive settings including:
 - Real-time validation and log viewing
 - Profile-based configuration management
 - Windows Task Scheduler integration
-- Built-in localhost server functionality
 
 ## Advanced Configuration Features
 
@@ -316,34 +314,6 @@ Based on the enhanced config file, the GUI needs to support:
 - content_rating (au, cs, de, mal, nz, uk variants), genre.yml, resolution.yml
 - streaming.yml, studio.yml, subtitle_language.yml, universe.yml, year.yml
 
-## Localhost Web Server Requirements
-
-### Core Functionality
-- **Full Feature Parity:** All Windows app functionality available through web interface
-- **Real-Time Synchronization:** Changes made on web server instantly reflect in Windows app and vice versa
-- **Modern UI Design:** Snazzy, dark-themed responsive web interface
-- **Port Configuration:** Default localhost:6969
-- **Cross-Platform Access:** Accessible from any browser while server is running
-
-### Web Server Features
-- **Same Page Flow:** Welcome → Profile → Connections → Charts → Overlays → Services → Settings → Actions
-- **Responsive Design:** Works on desktop, tablet, and mobile browsers
-- **Dark Theme:** Consistent with Windows app theming
-- **Real-Time Updates:** WebSocket or similar technology for live synchronization
-- **Profile Management:** Same profile system as Windows app
-- **YAML Generation:** Generate and download config files from web interface
-- **Kometa Execution:** Run Kometa directly from web interface with live log viewing
-- **Task Scheduling:** Create/manage Windows scheduled tasks from web interface
-- **File Management:** Browse and select directories, fonts, and assets
-
-### Technical Implementation
-- **Web Framework:** ASP.NET Core or similar for robust web server
-- **Real-Time Communication:** SignalR for Windows app ↔ Web server synchronization
-- **Modern Frontend:** HTML5, CSS3, JavaScript with dark theme framework
-- **API Endpoints:** RESTful APIs for all configuration operations
-- **Session Management:** Maintain user sessions and profile state
-- **Security:** Local-only access with optional authentication
-- **File Upload/Download:** Handle YAML configs, fonts, and asset files
 
 ## Technical Requirements
 - Windows Forms application
@@ -351,11 +321,7 @@ Based on the enhanced config file, the GUI needs to support:
 - HTTP client for API authentication
 - Process management for running Kometa
 - Windows Task Scheduler COM interface
-- Built-in web server capabilities (ASP.NET Core)
-- Real-time bidirectional synchronization (SignalR)
 - Secure credential storage per profile
 - Dynamic UI generation based on selected options
 - Template variable management system
 - Multi-level overlay configuration support
-- Modern responsive web interface with dark theme
-- Cross-platform browser compatibility

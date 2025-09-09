@@ -15,12 +15,13 @@ namespace KometaGUIv3.Forms
     public partial class ConnectionsPage : UserControl
     {
         private PlexService plexService;
+        private PlexOAuthService plexOAuthService;
         private KometaProfile profile;
         private bool isValidated = false;
 
         // Controls
-        private TextBox txtKometaDirectory, txtPlexEmail, txtPlexPassword, txtPlexUrl, txtTMDbApiKey;
-        private Button btnBrowseDirectory, btnAuthenticatePlex, btnTMDbLink;
+        private TextBox txtKometaDirectory, txtPlexToken, txtPlexUrl, txtTMDbApiKey;
+        private Button btnBrowseDirectory, btnAuthenticatePlex, btnAuthenticateToken, btnTMDbLink;
         private CheckedListBox clbLibraries;
         private Button btnSelectAll, btnUnselectAll;
         private Label lblValidationStatus;
@@ -39,6 +40,7 @@ namespace KometaGUIv3.Forms
         {
             this.profile = profile;
             plexService = new PlexService();
+            plexOAuthService = new PlexOAuthService();
             InitializeComponent();
             SetupControls();
             LoadProfileData();
@@ -102,54 +104,66 @@ namespace KometaGUIv3.Forms
                 ForeColor = DarkTheme.TextColor
             };
 
-            var lblPlexEmail = new Label
+            var lblAuthOptions = new Label
             {
-                Text = "Plex Email:",
-                Size = new Size(100, 20),
+                Text = "Authentication Methods:",
+                Size = new Size(150, 20),
                 Location = new Point(15, 35),
-                ForeColor = DarkTheme.TextColor
-            };
-
-            txtPlexEmail = new TextBox
-            {
-                Size = new Size(200, 25),
-                Location = new Point(120, 32)
-            };
-
-            var lblPlexPassword = new Label
-            {
-                Text = "Password:",
-                Size = new Size(70, 20),
-                Location = new Point(340, 35),
-                ForeColor = DarkTheme.TextColor
-            };
-
-            txtPlexPassword = new TextBox
-            {
-                Size = new Size(200, 25),
-                Location = new Point(420, 32),
-                UseSystemPasswordChar = true
+                ForeColor = DarkTheme.TextColor,
+                Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 9F, FontStyle.Bold)
             };
 
             btnAuthenticatePlex = new Button
             {
-                Text = "Authenticate",
-                Size = new Size(100, 30),
-                Location = new Point(15, 70)
+                Text = "Authenticate Plex Account",
+                Size = new Size(170, 30),
+                Location = new Point(15, 65)
+            };
+
+            var lblOr = new Label
+            {
+                Text = "OR",
+                Size = new Size(25, 20),
+                Location = new Point(200, 71),
+                ForeColor = DarkTheme.TextColor,
+                Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 9F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            btnAuthenticateToken = new Button
+            {
+                Text = "Authenticate with Token",
+                Size = new Size(150, 30),
+                Location = new Point(240, 65)
+            };
+
+            var lblPlexToken = new Label
+            {
+                Text = "Plex Token:",
+                Size = new Size(80, 20),
+                Location = new Point(15, 105),
+                ForeColor = DarkTheme.TextColor
+            };
+
+            txtPlexToken = new TextBox
+            {
+                Size = new Size(500, 25),
+                Location = new Point(100, 102),
+                PlaceholderText = "Token will appear here after authentication, or paste your existing token..."
             };
 
             var lblPlexUrl = new Label
             {
                 Text = "Server URL:",
-                Size = new Size(100, 20),
-                Location = new Point(15, 115),
+                Size = new Size(80, 20),
+                Location = new Point(15, 140),
                 ForeColor = DarkTheme.TextColor
             };
 
             txtPlexUrl = new TextBox
             {
                 Size = new Size(300, 25),
-                Location = new Point(120, 112),
+                Location = new Point(100, 137),
                 Text = "http://192.168.1.12:32400"
             };
 
@@ -157,7 +171,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Status: Not authenticated",
                 Size = new Size(500, 20),
-                Location = new Point(15, 155),
+                Location = new Point(15, 175),
                 ForeColor = Color.Orange
             };
 
@@ -166,7 +180,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Advanced Settings:",
                 Size = new Size(120, 20),
-                Location = new Point(15, 185),
+                Location = new Point(15, 205),
                 ForeColor = DarkTheme.AccentColor,
                 Font = new Font(DarkTheme.GetDefaultFont().FontFamily, 9F, FontStyle.Bold)
             };
@@ -175,14 +189,14 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Timeout (sec):",
                 Size = new Size(80, 20),
-                Location = new Point(15, 215),
+                Location = new Point(15, 235),
                 ForeColor = DarkTheme.TextColor
             };
 
             nudTimeout = new NumericUpDown
             {
                 Size = new Size(60, 25),
-                Location = new Point(100, 212),
+                Location = new Point(100, 232),
                 Minimum = 10,
                 Maximum = 300,
                 Value = 60
@@ -192,14 +206,14 @@ namespace KometaGUIv3.Forms
             {
                 Text = "DB Cache:",
                 Size = new Size(60, 20),
-                Location = new Point(180, 215),
+                Location = new Point(180, 235),
                 ForeColor = DarkTheme.TextColor
             };
 
             nudDbCache = new NumericUpDown
             {
                 Size = new Size(60, 25),
-                Location = new Point(245, 212),
+                Location = new Point(245, 232),
                 Minimum = 10,
                 Maximum = 200,
                 Value = 40
@@ -209,7 +223,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Verify SSL",
                 Size = new Size(80, 20),
-                Location = new Point(320, 215),
+                Location = new Point(320, 235),
                 Checked = true,
                 ForeColor = DarkTheme.TextColor
             };
@@ -218,7 +232,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Clean Bundles",
                 Size = new Size(100, 20),
-                Location = new Point(15, 250),
+                Location = new Point(15, 270),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -226,7 +240,7 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Empty Trash",
                 Size = new Size(90, 20),
-                Location = new Point(125, 250),
+                Location = new Point(125, 270),
                 ForeColor = DarkTheme.TextColor
             };
 
@@ -234,13 +248,13 @@ namespace KometaGUIv3.Forms
             {
                 Text = "Optimize DB",
                 Size = new Size(90, 20),
-                Location = new Point(225, 250),
+                Location = new Point(225, 270),
                 ForeColor = DarkTheme.TextColor
             };
 
             grpPlexSetup.Controls.AddRange(new Control[] {
-                lblPlexEmail, txtPlexEmail, lblPlexPassword, txtPlexPassword,
-                btnAuthenticatePlex, lblPlexUrl, txtPlexUrl, lblValidationStatus,
+                lblAuthOptions, btnAuthenticatePlex, lblOr, btnAuthenticateToken,
+                lblPlexToken, txtPlexToken, lblPlexUrl, txtPlexUrl, lblValidationStatus,
                 lblAdvancedPlex, lblTimeout, nudTimeout, lblDbCache, nudDbCache,
                 cbVerifySSL, cbCleanBundles, cbEmptyTrash, cbOptimize
             });
@@ -386,100 +400,143 @@ namespace KometaGUIv3.Forms
             // Event handlers
             btnBrowseDirectory.Click += BtnBrowseDirectory_Click;
             btnAuthenticatePlex.Click += BtnAuthenticatePlex_Click;
+            btnAuthenticateToken.Click += BtnAuthenticateToken_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
             btnUnselectAll.Click += BtnUnselectAll_Click;
             btnTMDbLink.Click += BtnTMDbLink_Click;
             txtKometaDirectory.TextChanged += ValidatePageInputs;
+            txtPlexToken.TextChanged += ValidatePageInputs;
             txtTMDbApiKey.TextChanged += ValidatePageInputs;
             clbLibraries.ItemCheck += ClbLibraries_ItemCheck;
         }
 
         private async void BtnAuthenticatePlex_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtPlexEmail.Text) || string.IsNullOrWhiteSpace(txtPlexPassword.Text))
-            {
-                MessageBox.Show("Please enter both email and password.", "Authentication Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             btnAuthenticatePlex.Enabled = false;
+            btnAuthenticateToken.Enabled = false;
             btnAuthenticatePlex.Text = "Authenticating...";
-            lblValidationStatus.Text = "Status: Authenticating...";
+            lblValidationStatus.Text = "Status: Opening browser for authentication...";
             lblValidationStatus.ForeColor = Color.Orange;
 
             try
             {
-                // Step 1: Authenticate user
-                var token = await plexService.AuthenticateUser(txtPlexEmail.Text, txtPlexPassword.Text);
+                // Step 1: OAuth Browser Authentication
+                var token = await plexOAuthService.AuthenticateWithBrowser();
                 
                 if (string.IsNullOrEmpty(token))
                 {
-                    MessageBox.Show("Authentication failed. Please check your credentials.", "Error", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Authentication failed or was cancelled.", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                profile.Plex.Token = token;
-                profile.Plex.Email = txtPlexEmail.Text;
-                profile.Plex.IsAuthenticated = true;
-                
-                // Step 2: Discover servers
-                btnAuthenticatePlex.Text = "Discovering servers...";
-                lblValidationStatus.Text = "Status: Discovering Plex servers...";
-                
-                try
-                {
-                    var servers = await plexService.GetServerList(token);
-                    var bestServer = plexService.FindBestServer(servers);
-                    
-                    if (bestServer != null)
-                    {
-                        // Auto-populate server URL
-                        txtPlexUrl.Text = bestServer.GetUrl();
-                        profile.Plex.Url = bestServer.GetUrl();
-                        
-                        lblValidationStatus.Text = $"Status: Found server - {bestServer.Name} ({bestServer.Address}:{bestServer.Port})";
-                        lblValidationStatus.ForeColor = Color.LightBlue;
-                        
-                        // Step 3: Load libraries automatically
-                        btnAuthenticatePlex.Text = "Loading libraries...";
-                        lblValidationStatus.Text = "Status: Loading Plex libraries...";
-                        
-                        await LoadPlexLibraries();
-                        
-                        // Step 4: Complete setup
-                        lblValidationStatus.Text = "Status: Connected and ready!";
-                        lblValidationStatus.ForeColor = Color.LightGreen;
-                        
-                        MessageBox.Show($"Successfully connected to {bestServer.Name}!\nFound {clbLibraries.Items.Count} libraries.", 
-                            "Connection Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        // No servers found - graceful fallback
-                        await HandleServerDiscoveryFallback();
-                    }
-                }
-                catch (Exception serverEx)
-                {
-                    // Server discovery failed - graceful fallback
-                    System.Diagnostics.Debug.WriteLine($"Server discovery failed: {serverEx.Message}");
-                    await HandleServerDiscoveryFallback();
-                }
+                // Step 2: Populate token and complete authentication
+                txtPlexToken.Text = token;
+                await CompleteAuthentication(token);
             }
             catch (Exception ex)
             {
-                lblValidationStatus.Text = "Status: Connection error";
+                lblValidationStatus.Text = "Status: Authentication failed";
                 lblValidationStatus.ForeColor = Color.Red;
-                MessageBox.Show($"Connection error: {ex.Message}", "Error", 
+                MessageBox.Show($"Authentication error: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 btnAuthenticatePlex.Enabled = true;
-                btnAuthenticatePlex.Text = "Authenticate";
+                btnAuthenticateToken.Enabled = true;
+                btnAuthenticatePlex.Text = "Authenticate Plex Account";
                 ValidatePageInputs(null, null);
+            }
+        }
+
+        private async void BtnAuthenticateToken_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtPlexToken.Text))
+            {
+                MessageBox.Show("Please enter a Plex token.", "Authentication Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            btnAuthenticatePlex.Enabled = false;
+            btnAuthenticateToken.Enabled = false;
+            btnAuthenticateToken.Text = "Authenticating...";
+            lblValidationStatus.Text = "Status: Validating token...";
+            lblValidationStatus.ForeColor = Color.Orange;
+
+            try
+            {
+                await CompleteAuthentication(txtPlexToken.Text);
+            }
+            catch (Exception ex)
+            {
+                lblValidationStatus.Text = "Status: Authentication failed";
+                lblValidationStatus.ForeColor = Color.Red;
+                MessageBox.Show($"Authentication error: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnAuthenticatePlex.Enabled = true;
+                btnAuthenticateToken.Enabled = true;
+                btnAuthenticateToken.Text = "Authenticate with Token";
+                ValidatePageInputs(null, null);
+            }
+        }
+
+        private async Task CompleteAuthentication(string token)
+        {
+            // Validate token first
+            var isValidToken = await plexOAuthService.ValidateToken(token);
+            if (!isValidToken)
+            {
+                throw new Exception("Invalid or expired token");
+            }
+
+            profile.Plex.Token = token;
+            profile.Plex.IsAuthenticated = true;
+            
+            // Step 2: Discover servers
+            lblValidationStatus.Text = "Status: Discovering Plex servers...";
+            
+            try
+            {
+                var servers = await plexService.GetServerList(token);
+                var bestServer = plexService.FindBestServer(servers);
+                
+                if (bestServer != null)
+                {
+                    // Auto-populate server URL
+                    txtPlexUrl.Text = bestServer.GetUrl();
+                    profile.Plex.Url = bestServer.GetUrl();
+                    
+                    lblValidationStatus.Text = $"Status: Found server - {bestServer.Name} ({bestServer.Address}:{bestServer.Port})";
+                    lblValidationStatus.ForeColor = Color.LightBlue;
+                    
+                    // Step 3: Load libraries automatically
+                    lblValidationStatus.Text = "Status: Loading Plex libraries...";
+                    
+                    await LoadPlexLibraries();
+                    
+                    // Step 4: Complete setup
+                    lblValidationStatus.Text = "Status: Connected and ready!";
+                    lblValidationStatus.ForeColor = Color.LightGreen;
+                    
+                    MessageBox.Show($"Successfully connected to {bestServer.Name}!\nFound {clbLibraries.Items.Count} libraries.", 
+                        "Connection Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    // No servers found - graceful fallback
+                    await HandleServerDiscoveryFallback();
+                }
+            }
+            catch (Exception serverEx)
+            {
+                // Server discovery failed - graceful fallback
+                System.Diagnostics.Debug.WriteLine($"Server discovery failed: {serverEx.Message}");
+                await HandleServerDiscoveryFallback();
             }
         }
 
@@ -765,7 +822,7 @@ namespace KometaGUIv3.Forms
             if (profile != null)
             {
                 txtKometaDirectory.Text = profile.KometaDirectory ?? "";
-                txtPlexEmail.Text = profile.Plex.Email ?? "";
+                txtPlexToken.Text = profile.Plex.Token ?? "";
                 txtPlexUrl.Text = profile.Plex.Url ?? "http://192.168.1.12:32400";
                 txtTMDbApiKey.Text = profile.TMDb.ApiKey ?? "";
                 
@@ -834,7 +891,7 @@ namespace KometaGUIv3.Forms
             if (profile != null)
             {
                 profile.KometaDirectory = txtKometaDirectory.Text;
-                profile.Plex.Email = txtPlexEmail.Text;
+                profile.Plex.Token = txtPlexToken.Text;
                 profile.Plex.Url = txtPlexUrl.Text;
                 profile.TMDb.ApiKey = txtTMDbApiKey.Text;
                 profile.TMDb.IsAuthenticated = !string.IsNullOrWhiteSpace(txtTMDbApiKey.Text);

@@ -40,7 +40,6 @@ namespace KometaGUIv3.Shared.Models
     {
         public string Url { get; set; }
         public string Token { get; set; }
-        public string Email { get; set; }
         public bool IsAuthenticated { get; set; }
         public List<PlexLibrary> AvailableLibraries { get; set; }
         
@@ -56,7 +55,6 @@ namespace KometaGUIv3.Shared.Models
         {
             Url = string.Empty;
             Token = string.Empty;
-            Email = string.Empty;
             IsAuthenticated = false;
             AvailableLibraries = new List<PlexLibrary>();
             

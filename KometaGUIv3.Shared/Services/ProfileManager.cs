@@ -9,7 +9,7 @@ namespace KometaGUIv3.Shared.Services
 {
     public class ProfileManager
     {
-        private static readonly string ProfilesDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "KometaGUIv3", "Profiles");
+        private static readonly string ProfilesDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UnofficialKometaGUI", "Profiles");
         private List<KometaProfile> _profiles;
 
         public ProfileManager()

@@ -13,7 +13,7 @@ namespace KometaGUIv3.Shared.Services
 
     public class ApplicationSettingsManager
     {
-        private static readonly string AppDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "KometaGUIv3");
+        private static readonly string AppDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UnofficialKometaGUI");
         private static readonly string SettingsFilePath = Path.Combine(AppDataDirectory, "app-settings.json");
         private ApplicationSettings _settings;
 

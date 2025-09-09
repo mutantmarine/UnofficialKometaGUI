@@ -45,7 +45,7 @@ namespace KometaGUIv3.Forms
 
         private void SetupForm()
         {
-            this.Text = "Kometa GUI v3";
+            this.Text = "Unofficial Kometa GUI";
             this.Size = new Size(1500, 1000); // Optimal size for all content
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = new Size(1500, 1000); // Lock to optimal size
@@ -170,7 +170,7 @@ namespace KometaGUIv3.Forms
             
             var titleLabel = new Label
             {
-                Text = "Welcome to Kometa GUI v3",
+                Text = "Welcome to the Unofficial Kometa GUI!",
                 Font = DarkTheme.GetTitleFont(),
                 ForeColor = DarkTheme.TextColor,
                 Size = new Size(600, 40),
@@ -180,7 +180,7 @@ namespace KometaGUIv3.Forms
 
             var descriptionLabel = new Label
             {
-                Text = @"Kometa GUI v3 provides a user-friendly interface for managing your Kometa media library configurations.
+                Text = @"The Unofficial Kometa GUI provides a user-friendly interface for managing your Kometa media library configurations.
 
 Key Features:
 • Profile-based configuration management
