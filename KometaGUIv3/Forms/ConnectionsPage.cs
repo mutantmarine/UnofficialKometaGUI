@@ -18,10 +18,14 @@ namespace KometaGUIv3.Forms
         private PlexOAuthService plexOAuthService;
         private KometaProfile profile;
         private bool isValidated = false;
+        private List<PlexServer> discoveredServers = new List<PlexServer>();
+        private bool isManualMode = false; // Track dropdown vs manual mode
 
         // Controls
         private TextBox txtKometaDirectory, txtPlexToken, txtPlexUrl, txtTMDbApiKey;
         private Button btnBrowseDirectory, btnAuthenticatePlex, btnAuthenticateToken, btnTMDbLink;
+        private Button btnToggleMode, btnGetLibraries;
+        private ComboBox cmbServerSelection;
         private CheckedListBox clbLibraries;
         private Button btnSelectAll, btnUnselectAll;
         private Label lblValidationStatus;
@@ -167,6 +171,30 @@ namespace KometaGUIv3.Forms
                 Text = "http://192.168.1.12:32400"
             };
 
+            btnToggleMode = new Button
+            {
+                Text = "Enter Manually",
+                Size = new Size(120, 25),
+                Location = new Point(410, 137),
+                Visible = false // Hidden until authentication succeeds
+            };
+
+            cmbServerSelection = new ComboBox
+            {
+                Size = new Size(300, 25),
+                Location = new Point(100, 137),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Visible = false // Hidden initially, becomes default when authenticated
+            };
+
+            btnGetLibraries = new Button
+            {
+                Text = "Refresh Libraries",
+                Size = new Size(110, 25),
+                Location = new Point(540, 137),
+                Visible = false // Hidden until authentication succeeds
+            };
+
             lblValidationStatus = new Label
             {
                 Text = "Status: Not authenticated",
@@ -254,7 +282,8 @@ namespace KometaGUIv3.Forms
 
             grpPlexSetup.Controls.AddRange(new Control[] {
                 lblAuthOptions, btnAuthenticatePlex, lblOr, btnAuthenticateToken,
-                lblPlexToken, txtPlexToken, lblPlexUrl, txtPlexUrl, lblValidationStatus,
+                lblPlexToken, txtPlexToken, lblPlexUrl, txtPlexUrl, btnToggleMode,
+                cmbServerSelection, btnGetLibraries, lblValidationStatus,
                 lblAdvancedPlex, lblTimeout, nudTimeout, lblDbCache, nudDbCache,
                 cbVerifySSL, cbCleanBundles, cbEmptyTrash, cbOptimize
             });
@@ -401,12 +430,16 @@ namespace KometaGUIv3.Forms
             btnBrowseDirectory.Click += BtnBrowseDirectory_Click;
             btnAuthenticatePlex.Click += BtnAuthenticatePlex_Click;
             btnAuthenticateToken.Click += BtnAuthenticateToken_Click;
+            btnToggleMode.Click += BtnToggleMode_Click;
+            btnGetLibraries.Click += BtnGetLibraries_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
             btnUnselectAll.Click += BtnUnselectAll_Click;
             btnTMDbLink.Click += BtnTMDbLink_Click;
             txtKometaDirectory.TextChanged += ValidatePageInputs;
             txtPlexToken.TextChanged += ValidatePageInputs;
             txtTMDbApiKey.TextChanged += ValidatePageInputs;
+            txtPlexUrl.TextChanged += TxtPlexUrl_TextChanged; // Auto-save manual entries
+            cmbServerSelection.SelectedIndexChanged += CmbServerSelection_SelectedIndexChanged; // Auto-save dropdown selections
             clbLibraries.ItemCheck += ClbLibraries_ItemCheck;
         }
 
@@ -503,13 +536,19 @@ namespace KometaGUIv3.Forms
             try
             {
                 var servers = await plexService.GetServerList(token);
+                discoveredServers = servers; // Store all discovered servers
+                profile.Plex.DiscoveredServers = servers; // Save discovered servers to profile
                 var bestServer = plexService.FindBestServer(servers);
                 
                 if (bestServer != null)
                 {
-                    // Auto-populate server URL
+                    // Auto-populate server URL (temporarily disable event to prevent incorrect mode setting)
+                    txtPlexUrl.TextChanged -= TxtPlexUrl_TextChanged;
                     txtPlexUrl.Text = bestServer.GetUrl();
+                    txtPlexUrl.TextChanged += TxtPlexUrl_TextChanged;
                     profile.Plex.Url = bestServer.GetUrl();
+                    profile.Plex.IsManualMode = false; // Ensure dropdown is default for fresh auth
+                    isManualMode = false; // Update local state to match
                     
                     lblValidationStatus.Text = $"Status: Found server - {bestServer.Name} ({bestServer.Address}:{bestServer.Port})";
                     lblValidationStatus.ForeColor = Color.LightBlue;
@@ -522,6 +561,12 @@ namespace KometaGUIv3.Forms
                     // Step 4: Complete setup
                     lblValidationStatus.Text = "Status: Connected and ready!";
                     lblValidationStatus.ForeColor = Color.LightGreen;
+                    
+                    // Show server controls after successful authentication
+                    ShowServerControls();
+                    
+                    // Restore server selection after controls are shown
+                    RestoreServerSelection();
                     
                     MessageBox.Show($"Successfully connected to {bestServer.Name}!\nFound {clbLibraries.Items.Count} libraries.", 
                         "Connection Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -540,6 +585,58 @@ namespace KometaGUIv3.Forms
             }
         }
 
+        private void PopulateServerDropdown()
+        {
+            cmbServerSelection.Items.Clear();
+            
+            foreach (var server in discoveredServers)
+            {
+                // Add entry for each available connection address
+                var serverName = !string.IsNullOrEmpty(server.Name) ? server.Name : "Unnamed Server";
+                
+                // Add local addresses if available
+                if (!string.IsNullOrWhiteSpace(server.LocalAddresses))
+                {
+                    var localAddrs = server.LocalAddresses.Split(',');
+                    foreach (var addr in localAddrs)
+                    {
+                        var cleanAddr = addr.Trim();
+                        if (!string.IsNullOrEmpty(cleanAddr))
+                        {
+                            var url = $"http://{cleanAddr}:32400";
+                            var displayText = $"{serverName} - Local - {url}";
+                            cmbServerSelection.Items.Add(new ServerDisplayItem { Server = server, Url = url, DisplayText = displayText });
+                        }
+                    }
+                }
+                
+                // Add public/external address
+                if (!string.IsNullOrEmpty(server.Address))
+                {
+                    var url = $"http://{server.Address}:{server.Port}";
+                    var displayText = $"{serverName} - Remote - {url}";
+                    cmbServerSelection.Items.Add(new ServerDisplayItem { Server = server, Url = url, DisplayText = displayText });
+                }
+            }
+            
+            // Set display and value members
+            cmbServerSelection.DisplayMember = "DisplayText";
+            cmbServerSelection.ValueMember = "Url";
+            
+            // Don't auto-select first item - let RestoreServerSelection handle selection
+        }
+
+        private class ServerDisplayItem
+        {
+            public PlexServer Server { get; set; }
+            public string Url { get; set; }
+            public string DisplayText { get; set; }
+            
+            public override string ToString()
+            {
+                return DisplayText;
+            }
+        }
 
         private async Task HandleServerDiscoveryFallback()
         {
@@ -823,7 +920,12 @@ namespace KometaGUIv3.Forms
             {
                 txtKometaDirectory.Text = profile.KometaDirectory ?? "";
                 txtPlexToken.Text = profile.Plex.Token ?? "";
+                
+                // Temporarily disable TextChanged event to prevent overriding mode preferences
+                txtPlexUrl.TextChanged -= TxtPlexUrl_TextChanged;
                 txtPlexUrl.Text = profile.Plex.Url ?? "http://192.168.1.12:32400";
+                txtPlexUrl.TextChanged += TxtPlexUrl_TextChanged;
+                
                 txtTMDbApiKey.Text = profile.TMDb.ApiKey ?? "";
                 
                 // Load advanced Plex settings
@@ -857,6 +959,18 @@ namespace KometaGUIv3.Forms
                         lblValidationStatus.Text = "Status: Previously authenticated - Ready to reconnect";
                         lblValidationStatus.ForeColor = Color.Yellow;
                     }
+                    
+                    // Load discovered servers from profile
+                    discoveredServers = profile.Plex.DiscoveredServers ?? new List<PlexServer>();
+                    
+                    // Load mode preference from profile - preserve user's actual choice
+                    isManualMode = profile.Plex.IsManualMode;
+                    
+                    // Show server controls for previously authenticated profiles
+                    ShowServerControls();
+                    
+                    // Restore selection after controls are shown
+                    RestoreServerSelection();
                 }
             }
         }
@@ -912,5 +1026,223 @@ namespace KometaGUIv3.Forms
                 UpdateSelectedLibraries();
             }
         }
+
+        private async Task RefreshLibrariesWithNewServer(string serverUrl)
+        {
+            // Clear existing libraries
+            clbLibraries.Items.Clear();
+            profile.Plex.AvailableLibraries.Clear();
+            
+            // Force refresh libraries from the new server
+            var libraries = await plexService.GetLibraries(serverUrl, profile.Plex.Token, forceRefresh: true);
+            
+            if (libraries != null && libraries.Count > 0)
+            {
+                // Update profile
+                profile.Plex.AvailableLibraries = libraries.ToList();
+                
+                // Repopulate the library checkboxes
+                foreach (var library in libraries)
+                {
+                    var itemText = $"{library.Name} ({library.Type})";
+                    var isChecked = profile.Plex.AvailableLibraries.Any(l => l.Name == library.Name && l.Type == library.Type);
+                    clbLibraries.Items.Add(itemText, isChecked);
+                }
+                
+                // Update validation
+                ValidatePageInputs(null, null);
+                
+                MessageBox.Show($"Successfully loaded {libraries.Count} libraries from the selected server!", 
+                    "Server Changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                throw new Exception("No libraries found on the selected server or connection failed");
+            }
+        }
+
+        private void BtnToggleMode_Click(object sender, EventArgs e)
+        {
+            if (isManualMode)
+            {
+                // Switch to dropdown mode
+                ShowDropdownMode();
+                RestoreServerSelection(); // Ensure proper server selection after mode switch
+                btnToggleMode.Text = "Enter Manually";
+            }
+            else
+            {
+                // Switch to manual mode
+                ShowManualMode();
+                btnToggleMode.Text = "Choose Server";
+            }
+            isManualMode = !isManualMode;
+            
+            // Save mode preference to profile
+            if (profile != null)
+            {
+                profile.Plex.IsManualMode = isManualMode;
+            }
+        }
+
+        private async void BtnGetLibraries_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                btnGetLibraries.Enabled = false;
+                btnGetLibraries.Text = "Loading...";
+                lblValidationStatus.Text = "Status: Getting libraries...";
+                lblValidationStatus.ForeColor = Color.Orange;
+
+                // Get current server URL (from dropdown OR textbox)
+                string serverUrl = GetCurrentServerUrl();
+                
+                if (string.IsNullOrEmpty(serverUrl))
+                {
+                    lblValidationStatus.Text = "Status: Please select or enter a server URL";
+                    lblValidationStatus.ForeColor = Color.Red;
+                    return;
+                }
+
+                // Refresh libraries with the current server
+                await RefreshLibrariesWithNewServer(serverUrl);
+                
+                lblValidationStatus.Text = "Status: Libraries updated successfully!";
+                lblValidationStatus.ForeColor = Color.LightGreen;
+            }
+            catch (Exception ex)
+            {
+                lblValidationStatus.Text = "Status: Failed to get libraries";
+                lblValidationStatus.ForeColor = Color.Red;
+                MessageBox.Show($"Failed to get libraries: {ex.Message}", "Library Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnGetLibraries.Enabled = true;
+                btnGetLibraries.Text = "Refresh Libraries";
+            }
+        }
+
+        private void ShowDropdownMode()
+        {
+            // Show dropdown, hide textbox
+            cmbServerSelection.Visible = true;
+            txtPlexUrl.Visible = false;
+            
+            // Populate dropdown if needed
+            if (discoveredServers.Count > 0 && cmbServerSelection.Items.Count == 0)
+            {
+                PopulateServerDropdown();
+            }
+        }
+
+        private void ShowManualMode()
+        {
+            // Show textbox, hide dropdown
+            txtPlexUrl.Visible = true;
+            cmbServerSelection.Visible = false;
+        }
+
+        private void ShowServerControls()
+        {
+            bool isAuthenticated = profile.Plex.IsAuthenticated && !string.IsNullOrEmpty(profile.Plex.Token);
+            
+            if (isAuthenticated)
+            {
+                btnToggleMode.Visible = true;
+                btnGetLibraries.Visible = true;
+                
+                // Show dropdown by default (unless already in manual mode)
+                if (!isManualMode)
+                {
+                    ShowDropdownMode();
+                    btnToggleMode.Text = "Enter Manually";
+                }
+                else
+                {
+                    ShowManualMode();
+                    btnToggleMode.Text = "Choose Server";
+                }
+            }
+            else
+            {
+                // Hide all server controls when not authenticated
+                btnToggleMode.Visible = false;
+                btnGetLibraries.Visible = false;
+                cmbServerSelection.Visible = false;
+                txtPlexUrl.Visible = true; // Show textbox for initial setup
+            }
+        }
+
+        private string GetCurrentServerUrl()
+        {
+            if (isManualMode)
+            {
+                return txtPlexUrl.Text?.Trim();
+            }
+            else
+            {
+                if (cmbServerSelection.SelectedItem is ServerDisplayItem selectedItem)
+                {
+                    return selectedItem.Url;
+                }
+                return string.Empty;
+            }
+        }
+
+        private void TxtPlexUrl_TextChanged(object sender, EventArgs e)
+        {
+            // Auto-save manual server URL entries
+            if (profile != null && !string.IsNullOrEmpty(txtPlexUrl.Text))
+            {
+                profile.Plex.Url = txtPlexUrl.Text;
+                profile.Plex.IsManualMode = true; // User is using manual mode
+            }
+        }
+
+        private void CmbServerSelection_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Auto-save dropdown server selections
+            if (profile != null && cmbServerSelection.SelectedItem is ServerDisplayItem selectedItem)
+            {
+                profile.Plex.Url = selectedItem.Url;
+                profile.Plex.IsManualMode = false; // User is using dropdown mode
+                
+                // Also update the textbox for consistency (but don't trigger its event)
+                txtPlexUrl.TextChanged -= TxtPlexUrl_TextChanged;
+                txtPlexUrl.Text = selectedItem.Url;
+                txtPlexUrl.TextChanged += TxtPlexUrl_TextChanged;
+            }
+        }
+
+        private void RestoreServerSelection()
+        {
+            if (profile == null || string.IsNullOrEmpty(profile.Plex.Url))
+                return;
+
+            if (isManualMode)
+            {
+                // Manual mode: just ensure textbox has the saved URL (already loaded in LoadProfileData)
+                // txtPlexUrl.Text is already set from LoadProfileData
+            }
+            else
+            {
+                // Dropdown mode: find and select the matching server
+                for (int i = 0; i < cmbServerSelection.Items.Count; i++)
+                {
+                    if (cmbServerSelection.Items[i] is ServerDisplayItem item && item.Url == profile.Plex.Url)
+                    {
+                        // Temporarily remove event handler to avoid triggering save during restoration
+                        cmbServerSelection.SelectedIndexChanged -= CmbServerSelection_SelectedIndexChanged;
+                        cmbServerSelection.SelectedIndex = i;
+                        cmbServerSelection.SelectedIndexChanged += CmbServerSelection_SelectedIndexChanged;
+                        break;
+                    }
+                }
+            }
+        }
+
+
     }
 }

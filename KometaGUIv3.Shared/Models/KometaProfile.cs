@@ -42,6 +42,8 @@ namespace KometaGUIv3.Shared.Models
         public string Token { get; set; }
         public bool IsAuthenticated { get; set; }
         public List<PlexLibrary> AvailableLibraries { get; set; }
+        public List<PlexServer> DiscoveredServers { get; set; }
+        public bool IsManualMode { get; set; }
         
         // Advanced Plex Settings
         public int Timeout { get; set; }
@@ -57,6 +59,8 @@ namespace KometaGUIv3.Shared.Models
             Token = string.Empty;
             IsAuthenticated = false;
             AvailableLibraries = new List<PlexLibrary>();
+            DiscoveredServers = new List<PlexServer>();
+            IsManualMode = false; // Default to dropdown mode
             
             // Set defaults
             Timeout = 60;
