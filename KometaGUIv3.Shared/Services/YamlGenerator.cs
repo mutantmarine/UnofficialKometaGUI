@@ -61,13 +61,13 @@ namespace KometaGUIv3.Shared.Services
                     string libraryType = GetLibraryMediaType(library?.Type);
                     
                     // Add collection files only if there are selected charts
-                    var enabledCharts = profile.SelectedCharts.Where(c => c.Value).ToList();
+                    var enabledCharts = GetCollectionsForLibraryType(profile.SelectedCharts, libraryType);
                     if (enabledCharts.Count > 0)
                     {
                         sb.AppendLine("    collection_files:");
                         foreach (var chart in enabledCharts)
                         {
-                            sb.AppendLine($"    - default: {chart.Key}");
+                            sb.AppendLine($"    - default: {chart}");
                         }
                     }
                     
@@ -195,6 +195,49 @@ namespace KometaGUIv3.Shared.Services
                 default:
                     return "Movies"; // Default to Movies for unknown types
             }
+        }
+
+        private List<string> GetCollectionsForLibraryType(Dictionary<string, bool> selectedCharts, string libraryType)
+        {
+            var collections = new List<string>();
+            
+            // Debug output to see what's actually stored
+            Console.WriteLine($"[DEBUG] GetCollectionsForLibraryType for {libraryType}:");
+            foreach (var chart in selectedCharts.Where(c => c.Value))
+            {
+                Console.WriteLine($"[DEBUG]   Found enabled: {chart.Key}");
+            }
+            
+            foreach (var chart in selectedCharts.Where(c => c.Value))
+            {
+                var collectionKey = chart.Key;
+                
+                // Remove prefixes to get the actual collection ID for YAML output
+                if (libraryType == "Movies" && collectionKey.StartsWith("movie_"))
+                {
+                    // Movies library: include movie-specific collections
+                    var collectionId = collectionKey.Substring("movie_".Length);
+                    collections.Add(collectionId);
+                    Console.WriteLine($"[DEBUG]   Added movie collection: {collectionId}");
+                }
+                else if (libraryType == "TV Shows" && collectionKey.StartsWith("show_"))
+                {
+                    // TV Shows library: include show-specific collections
+                    var collectionId = collectionKey.Substring("show_".Length);
+                    collections.Add(collectionId);
+                    Console.WriteLine($"[DEBUG]   Added show collection: {collectionId}");
+                }
+                else if (!collectionKey.StartsWith("movie_") && !collectionKey.StartsWith("show_"))
+                {
+                    // All libraries: include non-prefixed collections (Charts, Awards, Both tabs)
+                    collections.Add(collectionKey);
+                    Console.WriteLine($"[DEBUG]   Added universal collection: {collectionKey}");
+                }
+                // Skip collections that don't match this library type
+            }
+            
+            Console.WriteLine($"[DEBUG] Final collections for {libraryType}: [{string.Join(", ", collections)}]");
+            return collections;
         }
 
         private void GenerateSimpleOverlayEntries(StringBuilder sb, OverlayConfiguration overlayConfig, string overlayName)

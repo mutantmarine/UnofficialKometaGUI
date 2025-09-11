@@ -152,7 +152,10 @@ namespace KometaGUIv3.Forms
                 // Add controls directly to panel
                 panel.Controls.Add(checkBox);
                 panel.Controls.Add(descLabel);
-                collectionCheckboxes[collection.Id] = checkBox;
+                
+                // Charts tab uses original collection ID (applies to all libraries)
+                string dictKey = collection.Id;
+                collectionCheckboxes[dictKey] = checkBox;
                 y += 45;
             }
 
@@ -206,7 +209,10 @@ namespace KometaGUIv3.Forms
 
                 
                 panel.Controls.AddRange(new Control[] { checkBox, descLabel }); // Use AddRange like OverlaysPage
-                collectionCheckboxes[collection.Id] = checkBox; // Store in dictionary
+                
+                // Awards tab uses original collection ID (applies to all libraries)
+                string dictKey = collection.Id;
+                collectionCheckboxes[dictKey] = checkBox; // Store in dictionary
                 y += 45;
             }
 
@@ -278,7 +284,10 @@ namespace KometaGUIv3.Forms
                 // Add controls directly to panel
                 panel.Controls.Add(checkBox);
                 panel.Controls.Add(descLabel);
-                collectionCheckboxes[collection.Id] = checkBox;
+                
+                // Use tab-aware dictionary key to match storage key format
+                string dictKey = GetCollectionStorageKey(collection.Id, tabName);
+                collectionCheckboxes[dictKey] = checkBox;
                 y += 45;
             }
 
@@ -292,15 +301,51 @@ namespace KometaGUIv3.Forms
             {
                 collection.IsSelected = checkBox.Checked;
                 
+                // Determine which tab this checkbox belongs to
+                string tabName = GetTabNameForCheckbox(checkBox);
+                
+                // Determine the storage key based on the tab context
+                string storageKey = GetCollectionStorageKey(collection.Id, tabName);
+                
                 // Update profile
-                if (!profile.SelectedCharts.ContainsKey(collection.Id))
+                if (!profile.SelectedCharts.ContainsKey(storageKey))
                 {
-                    profile.SelectedCharts.Add(collection.Id, checkBox.Checked);
+                    profile.SelectedCharts.Add(storageKey, checkBox.Checked);
                 }
                 else
                 {
-                    profile.SelectedCharts[collection.Id] = checkBox.Checked;
+                    profile.SelectedCharts[storageKey] = checkBox.Checked;
                 }
+            }
+        }
+
+        private string GetTabNameForCheckbox(CheckBox checkBox)
+        {
+            // Find which tab this checkbox belongs to by traversing up the control hierarchy
+            Control current = checkBox.Parent;
+            while (current != null)
+            {
+                if (current is TabPage tabPage)
+                {
+                    return tabPage.Text;
+                }
+                current = current.Parent;
+            }
+            return string.Empty;
+        }
+
+        private string GetCollectionStorageKey(string collectionId, string tabName)
+        {
+            // Use tab context to determine correct prefix
+            switch (tabName)
+            {
+                case "Movies Only":
+                    return $"movie_{collectionId}";
+                case "TV Shows Only":
+                    return $"show_{collectionId}";
+                default:
+                    // Charts, Awards, and Both collections use original ID (apply to all libraries)
+                    return collectionId;
             }
         }
 
@@ -345,14 +390,15 @@ namespace KometaGUIv3.Forms
         private void LoadProfileSelections()
         {
             // Load existing selections from profile using the dictionary
+            // Dictionary keys now match storage keys exactly, so we can use them directly
             foreach (var checkboxPair in collectionCheckboxes)
             {
-                var collectionId = checkboxPair.Key;
+                var storageKey = checkboxPair.Key; // Dictionary key is now the same as storage key
                 var checkBox = checkboxPair.Value;
                 
-                if (profile.SelectedCharts.ContainsKey(collectionId))
+                if (profile.SelectedCharts.ContainsKey(storageKey))
                 {
-                    checkBox.Checked = profile.SelectedCharts[collectionId];
+                    checkBox.Checked = profile.SelectedCharts[storageKey];
                     if (checkBox.Tag is DefaultCollection collection)
                     {
                         collection.IsSelected = checkBox.Checked;
