@@ -12,6 +12,10 @@ namespace KometaGUIv3.Shared.Models
         public TMDbConfiguration TMDb { get; set; }
         public List<string> SelectedLibraries { get; set; }
         public Dictionary<string, bool> SelectedCharts { get; set; }
+        public Dictionary<string, CollectionAdvancedConfiguration> CollectionAdvancedSettings { get; set; }
+        public List<CustomCollection> CustomCollections { get; set; }
+        public List<PlexCollection> MyPlexCollections { get; set; }
+        public Dictionary<string, CollectionAdvancedConfiguration> MyCollectionAdvancedSettings { get; set; }
         public Dictionary<string, OverlayConfiguration> OverlaySettings { get; set; }
         public Dictionary<string, string> OptionalServices { get; set; }
         public Dictionary<string, bool> EnabledServices { get; set; }
@@ -27,6 +31,10 @@ namespace KometaGUIv3.Shared.Models
             TMDb = new TMDbConfiguration();
             SelectedLibraries = new List<string>();
             SelectedCharts = new Dictionary<string, bool>();
+            CollectionAdvancedSettings = new Dictionary<string, CollectionAdvancedConfiguration>();
+            CustomCollections = new List<CustomCollection>();
+            MyPlexCollections = new List<PlexCollection>();
+            MyCollectionAdvancedSettings = new Dictionary<string, CollectionAdvancedConfiguration>();
             OverlaySettings = new Dictionary<string, OverlayConfiguration>();
             OptionalServices = new Dictionary<string, string>();
             EnabledServices = new Dictionary<string, bool>();
@@ -302,5 +310,71 @@ namespace KometaGUIv3.Shared.Models
         public List<string> PlaylistSyncToUsers { get; set; } = new List<string>();
         public List<string> PlaylistExcludeUsers { get; set; } = new List<string>();
         public string CustomRepo { get; set; } = "";
+    }
+
+    // Configuration class to store advanced collection settings
+    public class CollectionAdvancedConfiguration
+    {
+        public bool IsEnabled { get; set; }
+        public string MediaType { get; set; } = "Both";
+        public bool DataRangeEnabled { get; set; }
+        public string StartingValue { get; set; }
+        public string EndingValue { get; set; }
+        public bool StylingEnabled { get; set; }
+        public string SepStyle { get; set; }
+        public bool VisibilityEnabled { get; set; }
+        public bool VisibleLibraryTop { get; set; }
+        public bool VisibleHomeTop { get; set; }
+        public bool VisibleSharedTop { get; set; }
+        public bool ContentFilteringEnabled { get; set; }
+        public bool OriginalsOnly { get; set; }
+        public int Depth { get; set; } = 1;
+        public int Limit { get; set; } = 50;
+    }
+
+    // Custom Collection model
+    public class CustomCollection
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public string Poster { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime LastModified { get; set; }
+
+        public CustomCollection()
+        {
+            Id = string.Empty;
+            Name = string.Empty;
+            Url = string.Empty;
+            Poster = string.Empty;
+            Description = string.Empty;
+            CreatedDate = DateTime.Now;
+            LastModified = DateTime.Now;
+        }
+    }
+
+    // Plex Collection model for existing collections from user's Plex server
+    public class PlexCollection
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string LibraryName { get; set; }
+        public string LibraryId { get; set; }
+        public int ItemCount { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string Type { get; set; }
+
+        public PlexCollection()
+        {
+            Id = string.Empty;
+            Name = string.Empty;
+            LibraryName = string.Empty;
+            LibraryId = string.Empty;
+            ItemCount = 0;
+            UpdatedAt = DateTime.Now;
+            Type = string.Empty;
+        }
     }
 }

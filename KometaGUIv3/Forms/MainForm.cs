@@ -440,8 +440,17 @@ This guided setup will help you create professional media library configurations
             }
 
             var finalActionsPage = new FinalActionsPage(currentProfile, profileManager);
+            finalActionsPage.ProfileChanged += FinalActionsPage_ProfileChanged;
             contentPanel.Controls.Add(finalActionsPage);
             btnNext.Enabled = true; // Enable the finish button
+        }
+
+        private void FinalActionsPage_ProfileChanged(object sender, KometaProfile e)
+        {
+            if (e != null)
+            {
+                currentProfile = e;
+            }
         }
 
         private void ShowComingSoonPage(string pageName, string features)

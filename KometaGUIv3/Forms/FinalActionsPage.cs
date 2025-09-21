@@ -21,6 +21,8 @@ namespace KometaGUIv3.Forms
         private ProfileManager profileManager;
         private KometaInstaller kometaInstaller;
         private SystemRequirements systemRequirements;
+        private LocalServerHost localServerHost;
+        private bool isLocalServerRunning;
 
         // UI Controls
         private RichTextBox rtbLogs;
@@ -32,6 +34,8 @@ namespace KometaGUIv3.Forms
         private Label lblScheduleStatus, lblLocalhostStatus, lblInstallationStatus;
         private ProgressBar progressBar, installationProgressBar;
 
+        public event EventHandler<KometaProfile> ProfileChanged;
+
         public FinalActionsPage(KometaProfile profile, ProfileManager profileManager)
         {
             this.profile = profile;
@@ -41,6 +45,12 @@ namespace KometaGUIv3.Forms
             this.taskScheduler = new TaskSchedulerService();
             this.kometaInstaller = new KometaInstaller();
             this.systemRequirements = new SystemRequirements();
+            this.localServerHost = new LocalServerHost(profileManager, this.kometaRunner, this.yamlGenerator, this.taskScheduler, this.kometaInstaller, this.systemRequirements);
+            this.localServerHost.AttachProfile(profile);
+            this.localServerHost.StatusChanged += LocalServerHost_StatusChanged;
+            this.localServerHost.LogBroadcast += LocalServerHost_LogBroadcast;
+            this.localServerHost.ActiveProfileChanged += LocalServerHost_ActiveProfileChanged;
+            this.Disposed += (_, _) => localServerHost?.Dispose();
 
             InitializeComponent();
             SetupControls();
@@ -576,10 +586,40 @@ namespace KometaGUIv3.Forms
             }
         }
 
-        private void BtnStartLocalhost_Click(object sender, EventArgs e)
+        private async void BtnStartLocalhost_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("This feature has not been implemented yet.", 
-                "Feature Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (localServerHost == null)
+            {
+                MessageBox.Show("Local server service is not available.", "Local Server", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            btnStartLocalhost.Enabled = false;
+
+            try
+            {
+                localServerHost.AttachProfile(profile);
+
+                if (!localServerHost.IsRunning)
+                {
+                    await localServerHost.StartAsync();
+                    LogMessage($"Local server enabled at {localServerHost.BaseUrl}");
+                }
+                else
+                {
+                    await localServerHost.StopAsync();
+                    LogMessage("Local server disabled.");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Local server error: {ex.Message}");
+                MessageBox.Show($"Failed to toggle the local server.\n\n{ex.Message}", "Local Server", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnStartLocalhost.Enabled = true;
+            }
         }
 
         private void BtnPayPal_Click(object sender, EventArgs e)
@@ -614,11 +654,17 @@ namespace KometaGUIv3.Forms
             }
         }
 
-        private void LogMessage(string message)
+        private void LogMessage(string message, bool fromServer = false)
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
             rtbLogs.AppendText($"[{timestamp}] {message}\n");
             rtbLogs.ScrollToCaret();
+
+            if (!fromServer && localServerHost != null)
+            {
+                var shouldBroadcast = localServerHost.IsRunning;
+                localServerHost.RecordLog("Desktop", message, broadcast: shouldBroadcast);
+            }
         }
 
         private void UpdateScheduleStatus()
@@ -637,6 +683,57 @@ namespace KometaGUIv3.Forms
                 btnRemoveSchedule.Enabled = false;
                 btnCreateSchedule.Enabled = true; // Enable create when no task
             }
+        }
+
+        private void LocalServerHost_StatusChanged(object sender, bool isRunning)
+        {
+            isLocalServerRunning = isRunning;
+            SafeUpdateUI(() =>
+            {
+                btnStartLocalhost.Text = isRunning ? "Disable Local Server" : "Enable Local Server";
+                lblLocalhostStatus.Text = isRunning
+                    ? $"Server: Running at {localServerHost.BaseUrl}"
+                    : "Server: Stopped";
+                lblLocalhostStatus.ForeColor = isRunning ? Color.LightGreen : Color.Orange;
+            });
+        }
+
+        private void LocalServerHost_LogBroadcast(object sender, LocalServerLogEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            if (entry.Source.Equals("Kometa", StringComparison.OrdinalIgnoreCase) ||
+                entry.Source.Equals("Installer", StringComparison.OrdinalIgnoreCase) ||
+                entry.Source.Equals("System", StringComparison.OrdinalIgnoreCase) ||
+                entry.Source.Equals("Desktop", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            SafeUpdateUI(() =>
+            {
+                LogMessage($"[{entry.Source}] {entry.Message}", fromServer: true);
+            });
+        }
+
+        private void LocalServerHost_ActiveProfileChanged(object sender, KometaProfile updatedProfile)
+        {
+            if (updatedProfile == null)
+            {
+                return;
+            }
+
+            profile = updatedProfile;
+            localServerHost.AttachProfile(profile);
+            SafeUpdateUI(() =>
+            {
+                UpdateScheduleStatus();
+                GenerateConfigPreview();
+            });
+            ProfileChanged?.Invoke(this, profile);
         }
 
         private void GenerateConfigPreview()
@@ -1144,5 +1241,6 @@ namespace KometaGUIv3.Forms
             // Final actions page doesn't need to save additional data
             // Profile is saved when actions are performed
         }
+
     }
 }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kometa GUI – Optional Services</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+    <script defer src="services.js"></script>
+  </head>
+  <body data-page="services">
+    <main id="services-root">
+      <section class="card">
+        <h1>Optional Services</h1>
+        <p class="description">Store API keys and credentials for Radarr, Sonarr, Trakt, Notifiarr, AniList, and other services Kometa can leverage.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Configured Services</h2>
+          <button id="add-service">Add Service</button>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="services-table-body"></tbody>
+        </table>
+      </section>
+    </main>
+  </body>
+</html>

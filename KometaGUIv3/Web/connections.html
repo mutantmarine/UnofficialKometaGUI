@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kometa GUI – Connections</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+    <script defer src="connections.js"></script>
+  </head>
+  <body data-page="connections">
+    <main id="connections-root">
+      <section class="card">
+        <h1>Required Connections</h1>
+        <p class="description">Configure the Kometa installation path, authenticate Plex, choose a server, and fetch available libraries. Provide your TMDb API key to enable metadata lookups.</p>
+      </section>
+
+      <section class="card">
+        <h2>Kometa Directory</h2>
+        <div class="form-grid">
+          <label>
+            Installation Path
+            <input id="kometa-directory" type="text" placeholder="C:\\Kometa" />
+          </label>
+          <div class="flex-row mt-1">
+            <button id="save-directory">Save</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Plex Account</h2>
+        <div class="form-grid">
+          <label>
+            Token
+            <input id="plex-token" type="text" placeholder="Paste Plex token or authenticate" />
+          </label>
+          <div class="flex-row">
+            <button id="save-plex-token">Save Token</button>
+            <button class="secondary" id="validate-plex-token">Validate</button>
+          </div>
+          <div class="flex-row">
+            <button id="start-plex-oauth">Start Plex OAuth</button>
+            <button class="secondary" id="cancel-plex-oauth">Cancel OAuth</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Plex Server & Libraries</h2>
+        <div class="form-grid">
+          <div>
+            <div class="flex-row">
+              <button id="fetch-servers">Detect Servers</button>
+              <select id="plex-server-select">
+                <option value="">Select a server</option>
+              </select>
+            </div>
+            <label class="mt-1">
+              Manual URL
+              <input id="plex-url" type="text" placeholder="http://192.168.1.10:32400" />
+            </label>
+            <div class="flex-row mt-1">
+              <button id="save-plex-url">Save URL</button>
+              <button class="secondary" id="fetch-libraries">Fetch Libraries</button>
+            </div>
+          </div>
+          <div>
+            <h3>Available Libraries</h3>
+            <div id="library-container" class="library-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>TMDb Configuration</h2>
+        <div class="form-grid">
+          <label>
+            TMDb API Key
+            <input id="tmdb-api-key" type="text" placeholder="TMDb API key" />
+          </label>
+          <div class="flex-row mt-1">
+            <button id="save-tmdb-api-key">Save TMDb Key</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

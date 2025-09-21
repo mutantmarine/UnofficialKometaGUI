@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kometa GUI – Profile Management</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+    <script defer src="profile.js"></script>
+  </head>
+  <body data-page="profile">
+    <main>
+      <section class="card">
+        <h1>Profile Management</h1>
+        <p class="description">Create, select, and remove Kometa profiles. Each profile keeps its own connections, collections, overlays, and settings.</p>
+        <div class="grid two mt-2">
+          <div class="card">
+            <h2>Existing Profiles</h2>
+            <ul class="list" id="profile-list"></ul>
+          </div>
+          <div class="card">
+            <h2>Create Profile</h2>
+            <label>
+              Profile Name
+              <input type="text" id="new-profile-name" placeholder="e.g. Plex Main" />
+            </label>
+            <button id="create-profile-btn" class="mt-1">Create Profile</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Active Profile Summary</h2>
+        <div id="profile-summary"></div>
+      </section>
+    </main>
+  </body>
+</html>

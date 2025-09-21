@@ -322,6 +322,107 @@ namespace KometaGUIv3.Services
             }
         }
 
+        public async Task<List<PlexCollection>> GetCollections(string serverUrl, string token, string libraryId, string libraryName)
+        {
+            try
+            {
+                var collections = new List<PlexCollection>();
+                var url = $"{serverUrl}/library/sections/{libraryId}/collections?X-Plex-Token={token}";
+
+                var response = await httpClient.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var xmlContent = await response.Content.ReadAsStringAsync();
+                    var xmlDoc = new XmlDocument();
+                    xmlDoc.LoadXml(xmlContent);
+
+                    var directories = xmlDoc.SelectNodes("//Directory");
+                    if (directories != null)
+                    {
+                        foreach (XmlNode directory in directories)
+                        {
+                            var collection = new PlexCollection
+                            {
+                                Id = directory.Attributes?["key"]?.Value ?? "",
+                                Name = directory.Attributes?["title"]?.Value ?? "",
+                                LibraryName = libraryName,
+                                LibraryId = libraryId,
+                                ItemCount = int.TryParse(directory.Attributes?["childCount"]?.Value, out int count) ? count : 0,
+                                Type = directory.Attributes?["subtype"]?.Value ?? "",
+                                UpdatedAt = DateTime.TryParse(directory.Attributes?["updatedAt"]?.Value, out DateTime updated) ? updated : DateTime.Now
+                            };
+                            
+                            if (!string.IsNullOrEmpty(collection.Name))
+                            {
+                                collections.Add(collection);
+                            }
+                        }
+                    }
+                }
+
+                return collections;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to get collections for library {libraryName}: {ex.Message}");
+            }
+        }
+
+        public async Task<List<PlexCollection>> GetAllCollections(string serverUrl, string token, List<PlexLibrary> libraries)
+        {
+            try
+            {
+                var allCollections = new List<PlexCollection>();
+                
+                foreach (var library in libraries.Where(l => l.IsSelected))
+                {
+                    try
+                    {
+                        // Get the library ID by calling the sections endpoint and finding the matching library
+                        var sectionsUrl = $"{serverUrl}/library/sections?X-Plex-Token={token}";
+                        var sectionsResponse = await httpClient.GetAsync(sectionsUrl);
+                        
+                        if (sectionsResponse.IsSuccessStatusCode)
+                        {
+                            var sectionsXml = await sectionsResponse.Content.ReadAsStringAsync();
+                            var sectionsDoc = new XmlDocument();
+                            sectionsDoc.LoadXml(sectionsXml);
+                            
+                            var sections = sectionsDoc.SelectNodes("//Directory");
+                            if (sections != null)
+                            {
+                                foreach (XmlNode section in sections)
+                                {
+                                    var sectionTitle = section.Attributes?["title"]?.Value ?? "";
+                                    if (sectionTitle == library.Name)
+                                    {
+                                        var sectionKey = section.Attributes?["key"]?.Value ?? "";
+                                        if (!string.IsNullOrEmpty(sectionKey))
+                                        {
+                                            var libraryCollections = await GetCollections(serverUrl, token, sectionKey, library.Name);
+                                            allCollections.AddRange(libraryCollections);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but continue with other libraries
+                        System.Diagnostics.Debug.WriteLine($"Failed to get collections for library {library.Name}: {ex.Message}");
+                    }
+                }
+
+                return allCollections;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to get all collections: {ex.Message}");
+            }
+        }
+
         public string FormatServerUrl(string ipAddress, int port = 32400)
         {
             if (!ipAddress.StartsWith("http"))
