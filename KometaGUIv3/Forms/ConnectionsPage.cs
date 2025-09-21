@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -764,9 +764,9 @@ namespace KometaGUIv3.Forms
                         var result = MessageBox.Show(
                             "Selected directory does not appear to contain a valid Kometa installation.\n\n" +
                             "The directory contains files but is missing:\n" +
-                            "• kometa.py (main script)\n" +
-                            "• requirements.txt (dependencies)\n" +
-                            "• defaults folder (collection templates)\n\n" +
+                            "â€¢ kometa.py (main script)\n" +
+                            "â€¢ requirements.txt (dependencies)\n" +
+                            "â€¢ defaults folder (collection templates)\n\n" +
                             "Would you like to use this directory anyway?\n" +
                             "(You can install/reinstall Kometa from the Final Actions page)",
                             "Invalid Kometa Directory",
@@ -812,6 +812,49 @@ namespace KometaGUIv3.Forms
             }
         }
 
+        private bool IsPotentialKometaDirectory(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                string fullPath = Path.GetFullPath(path);
+
+                // Path must be fully qualified (e.g., "C:\Users\...")
+                if (!Path.IsPathRooted(fullPath) || !Path.IsPathFullyQualified(fullPath))
+                {
+                    return false;
+                }
+
+                // Check if the root directory (e.g., "C:\", "D:\") exists.
+                string root = Path.GetPathRoot(fullPath);
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                {
+                    return false;
+                }
+
+                // The path is considered valid if the root drive exists, even if the
+                // final directory hasn't been created yet.
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                // Path contains invalid characters.
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                // Path is in an invalid format.
+                return false;
+            }
+        }
         private void BtnSelectAll_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < clbLibraries.Items.Count; i++)
@@ -897,10 +940,11 @@ namespace KometaGUIv3.Forms
         {
             bool wasValid = isValidated;
             
-            // Allow both valid Kometa directories and empty directories (for installation)
-            var directoryValid = !string.IsNullOrWhiteSpace(txtKometaDirectory.Text) &&
-                               Directory.Exists(txtKometaDirectory.Text) &&
-                               (IsValidKometaDirectory(txtKometaDirectory.Text) || IsEmptyDirectory(txtKometaDirectory.Text));
+            var directoryPath = txtKometaDirectory.Text?.Trim() ?? string.Empty;
+
+            // Accept any fully-qualified path whose root exists, even if the target folder
+            // has not been created yet or does not contain Kometa files.
+            var directoryValid = IsPotentialKometaDirectory(directoryPath);
             
             isValidated = directoryValid &&
                          profile.Plex.IsAuthenticated &&
@@ -1004,7 +1048,7 @@ namespace KometaGUIv3.Forms
         {
             if (profile != null)
             {
-                profile.KometaDirectory = txtKometaDirectory.Text;
+                profile.KometaDirectory = txtKometaDirectory.Text?.Trim();
                 profile.Plex.Token = txtPlexToken.Text;
                 profile.Plex.Url = txtPlexUrl.Text;
                 profile.TMDb.ApiKey = txtTMDbApiKey.Text;
@@ -1246,3 +1290,5 @@ namespace KometaGUIv3.Forms
 
     }
 }
+
+
