@@ -12,25 +12,21 @@
     <main id="services-root">
       <section class="card">
         <h1>Optional Services</h1>
-        <p class="description">Store API keys and credentials for Radarr, Sonarr, Trakt, Notifiarr, AniList, and other services Kometa can leverage.</p>
+        <p class="description">Toggle and configure the integrations Kometa can use. Local services auto-fill with your Plex host; API services accept the same credentials as the desktop wizard.</p>
       </section>
 
-      <section class="card">
-        <div class="section-title">
-          <h2>Configured Services</h2>
-          <button id="add-service">Add Service</button>
-        </div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Value</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="services-table-body"></tbody>
-        </table>
+      <section class="card" id="local-services-card">
+        <h2>Local Services</h2>
+        <p class="description">Radarr, Sonarr, Tautulli, and other services running on your network.</p>
+        <div id="local-services" class="service-stack"></div>
       </section>
+
+      <section class="card" id="api-services-card">
+        <h2>API Services</h2>
+        <p class="description">External APIs such as Trakt, AniDB, MyAnimeList, GitHub, and notification providers.</p>
+        <div id="api-services" class="service-stack"></div>
+      </section>
+
     </main>
   </body>
 </html>

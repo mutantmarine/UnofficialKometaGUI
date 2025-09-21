@@ -231,6 +231,145 @@ button.danger {
   line-height: 1.4;
 }
 
+.service-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.service-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  background: #151924;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.service-toggle {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.service-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.service-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  transition: opacity 0.2s ease;
+}
+
+.service-fields.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.service-fields label {
+  gap: 0.25rem;
+}
+
+.service-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.custom-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #151924;
+}
+
+.custom-entry span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 15, 0.78);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-dialog {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: min(460px, 90vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.modal-dialog h3 {
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.settings-card {
+  margin-top: 1.5rem;
+}
+
+.settings-grid {
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.setting-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.setting-toggle .help {
+  margin: 0.35rem 0 0 1.4rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.settings-reset {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
 .pill-group {
   display: flex;
   flex-wrap: wrap;

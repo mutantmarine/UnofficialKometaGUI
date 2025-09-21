@@ -11,45 +11,8 @@
   <body data-page="settings">
     <main id="settings-root">
       <section class="card">
-        <h1>Core Settings</h1>
-        <p class="description">Adjust the most common YAML settings. All changes are saved immediately.</p>
-        <div class="form-grid mt-2">
-          <label>
-            Sync Mode
-            <select id="sync-mode">
-              <option value="append">append</option>
-              <option value="sync">sync</option>
-              <option value="remove">remove</option>
-            </select>
-          </label>
-          <label>
-            Minimum Items
-            <input id="minimum-items" type="number" min="0" />
-          </label>
-          <label class="flex-row" style="align-items:center;">
-            <input id="delete-below" type="checkbox" /> Delete below minimum
-          </label>
-          <label>
-            Run Again Delay (hours)
-            <input id="run-again-delay" type="number" min="0" />
-          </label>
-          <label class="flex-row" style="align-items:center;">
-            <input id="enable-cache" type="checkbox" /> Enable cache
-          </label>
-          <label>
-            Overlay Filetype
-            <select id="overlay-filetype">
-              <option value="webp_lossy">webp_lossy</option>
-              <option value="webp_lossless">webp_lossless</option>
-              <option value="jpg">jpg</option>
-              <option value="png">png</option>
-            </select>
-          </label>
-          <label>
-            Overlay Quality
-            <input id="overlay-quality" type="number" min="1" max="100" />
-          </label>
-        </div>
+        <h1>Settings</h1>
+        <p class="description">Adjust Kometa defaults. Every change is saved to your current profile immediately.</p>
       </section>
     </main>
   </body>
