@@ -5,6 +5,7 @@ A user-friendly Windows interface for managing [Kometa](https://github.com/Komet
 ## 🚀 Features
 
 - **Profile-Based Management**: Create and manage multiple Kometa configurations
+- **Config Import**: Import existing Kometa config.yml files into new or existing profiles
 - **Easy Setup Wizard**: Step-by-step configuration for Plex, TMDb, and other services
 - **Visual Overlay Designer**: Interactive overlay positioning with 77+ default collections
 - **Comprehensive Collections**: Charts, awards, seasonal, and streaming service collections
@@ -20,7 +21,7 @@ A user-friendly Windows interface for managing [Kometa](https://github.com/Komet
 
 ## 📦 Installation
 
-1. Download the latest release: `UnofficialKometaGUI-v1.0.0-win-x64.zip`
+1. Download the latest release: `UnofficialKometaGUI-v1.0.3-win-x64.zip`
 2. Extract the ZIP file to any folder (e.g., `C:\UnofficialKometaGUI\`)
 3. Run `KometaGUIv3.exe`
 4. Follow the welcome wizard to set up your first profile
@@ -30,6 +31,11 @@ A user-friendly Windows interface for managing [Kometa](https://github.com/Komet
 ### Step 1: Profile Creation
 - Create a new profile or select an existing one
 - Each profile maintains separate configurations
+- **Import Existing Config**: Use the "Import from config.yml" button to import an existing Kometa configuration
+  - Browse to your existing config.yml file
+  - Preview the imported settings (Plex, TMDb, libraries, collections, overlays, services)
+  - Select target profile or create a new one
+  - Automatically populates all settings from your existing configuration
 
 ### Step 2: Required Services
 - **Kometa Directory**: Point to your Kometa installation folder
