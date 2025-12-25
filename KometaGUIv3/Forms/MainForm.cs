@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using KometaGUIv3.Utils;
 using KometaGUIv3.Services;
@@ -333,19 +334,151 @@ This guided setup will help you create professional media library configurations
                 }
             };
 
+            // Import from config.yml button
+            var importBtn = new Button
+            {
+                Text = "Import from config.yml",
+                Size = new Size(200, 35),
+                Location = new Point(50, 320)
+            };
+
+            importBtn.Click += async (s, e) =>
+            {
+                using (var openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Filter = "YAML files (*.yml;*.yaml)|*.yml;*.yaml|All files (*.*)|*.*";
+                    openFileDialog.Title = "Select Kometa config.yml file";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        try
+                        {
+                            var yamlContent = System.IO.File.ReadAllText(openFileDialog.FileName);
+                            var importer = new YamlImporter();
+                            var result = importer.ParseConfigYaml(yamlContent);
+
+                            if (!result.Success)
+                            {
+                                MessageBox.Show($"Failed to parse config file:\n{result.ErrorMessage}",
+                                    "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return;
+                            }
+
+                            // Show preview
+                            var preview = result.Preview;
+                            var warningText = result.Warnings.Count > 0
+                                ? $"\n\nWarnings:\n" + string.Join("\n", result.Warnings.Select(w => $"- {w.Section}: {w.Message}"))
+                                : "";
+
+                            var previewMessage = $"Config file parsed successfully!\n\n" +
+                                $"Plex: {preview.PlexUrl}\n" +
+                                $"TMDb: {(preview.HasTMDbKey ? "Configured" : "Missing")}\n" +
+                                $"Libraries: {preview.LibraryCount}\n" +
+                                $"Collections: {preview.CollectionCount}\n" +
+                                $"Overlays: {preview.OverlayCount}\n" +
+                                $"Services: {preview.EnabledServices.Count}" +
+                                warningText +
+                                $"\n\nSelect a profile to import into:";
+
+                            MessageBox.Show(previewMessage, "Import Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            // Ask which profile to import into
+                            string targetProfileName;
+                            if (profileListBox.SelectedIndex >= 0)
+                            {
+                                targetProfileName = profileListBox.SelectedItem.ToString();
+                                var confirmResult = MessageBox.Show(
+                                    $"Import into profile '{targetProfileName}'?\nThis will overwrite existing settings.",
+                                    "Confirm Import",
+                                    MessageBoxButtons.YesNo,
+                                    MessageBoxIcon.Question);
+
+                                if (confirmResult != DialogResult.Yes)
+                                {
+                                    // Ask for profile name
+                                    targetProfileName = Microsoft.VisualBasic.Interaction.InputBox(
+                                        "Enter profile name to import into (leave blank to cancel):",
+                                        "Import to Profile",
+                                        "");
+
+                                    if (string.IsNullOrWhiteSpace(targetProfileName))
+                                        return;
+                                }
+                            }
+                            else
+                            {
+                                // Ask for profile name
+                                targetProfileName = Microsoft.VisualBasic.Interaction.InputBox(
+                                    "Enter profile name to import into:",
+                                    "Import to Profile",
+                                    "Imported Profile");
+
+                                if (string.IsNullOrWhiteSpace(targetProfileName))
+                                    return;
+                            }
+
+                            // Create or load target profile
+                            var targetProfile = profileManager.LoadProfile(targetProfileName);
+                            if (targetProfile == null)
+                            {
+                                targetProfile = profileManager.CreateProfile(targetProfileName);
+                            }
+
+                            // Copy imported data
+                            targetProfile.Plex = result.Profile.Plex;
+                            targetProfile.TMDb = result.Profile.TMDb;
+                            targetProfile.SelectedLibraries = result.Profile.SelectedLibraries;
+                            targetProfile.SelectedCharts = result.Profile.SelectedCharts;
+                            targetProfile.OverlaySettings = result.Profile.OverlaySettings;
+                            targetProfile.OptionalServices = result.Profile.OptionalServices;
+                            targetProfile.EnabledServices = result.Profile.EnabledServices;
+                            targetProfile.Settings = result.Profile.Settings;
+
+                            // Save profile
+                            profileManager.SaveProfile(targetProfile);
+
+                            // Refresh profile list
+                            profileListBox.Items.Clear();
+                            foreach (var pName in profileManager.GetProfileNames())
+                            {
+                                profileListBox.Items.Add(pName);
+                            }
+
+                            // Select the imported profile
+                            for (int i = 0; i < profileListBox.Items.Count; i++)
+                            {
+                                if (profileListBox.Items[i].ToString() == targetProfileName)
+                                {
+                                    profileListBox.SelectedIndex = i;
+                                    break;
+                                }
+                            }
+
+                            MessageBox.Show($"Configuration imported successfully into profile '{targetProfileName}'!",
+                                "Import Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error importing config file:\n{ex.Message}",
+                                "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            };
+
             // Auto-select first profile if any exist (after event handlers are set up)
             if (profileListBox.Items.Count > 0)
             {
                 profileListBox.SelectedIndex = 0;
             }
 
-            profilePanel.Controls.AddRange(new Control[] { 
-                titleLabel, profileListBox, createBtn, deleteBtn, newProfileTextBox 
+            profilePanel.Controls.AddRange(new Control[] {
+                titleLabel, profileListBox, createBtn, deleteBtn, newProfileTextBox, importBtn
             });
-            
+
             DarkTheme.ApplyDarkTheme(profilePanel);
             contentPanel.Controls.Add(profilePanel);
-            
+
             btnNext.Enabled = profileListBox.SelectedIndex >= 0;
         }
 

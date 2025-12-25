@@ -369,6 +369,111 @@ namespace KometaGUIv3.Services
                 return Results.Ok();
             });
 
+            // Import config file endpoints
+            application.MapPost("/api/profiles/import/preview", async (HttpContext context) =>
+            {
+                var form = await context.Request.ReadFormAsync();
+                var file = form.Files.GetFile("configFile");
+
+                if (file == null || file.Length == 0)
+                {
+                    return Results.BadRequest(new { error = "No file uploaded." });
+                }
+
+                if (!file.FileName.EndsWith(".yml") && !file.FileName.EndsWith(".yaml"))
+                {
+                    return Results.BadRequest(new { error = "File must be a YAML file (.yml or .yaml)." });
+                }
+
+                if (file.Length > 5 * 1024 * 1024) // 5MB limit
+                {
+                    return Results.BadRequest(new { error = "File size exceeds 5MB limit." });
+                }
+
+                try
+                {
+                    using var stream = file.OpenReadStream();
+                    using var reader = new StreamReader(stream);
+                    var yamlContent = await reader.ReadToEndAsync();
+
+                    var importer = new YamlImporter();
+                    var result = importer.ParseConfigYaml(yamlContent);
+
+                    if (!result.Success)
+                    {
+                        return Results.BadRequest(new { error = result.ErrorMessage });
+                    }
+
+                    RecordLog("Import", $"Config file parsed successfully. {result.Preview.LibraryCount} libraries, {result.Preview.CollectionCount} collections, {result.Preview.OverlayCount} overlays found.");
+
+                    return Results.Ok(new
+                    {
+                        preview = result.Preview,
+                        warnings = result.Warnings,
+                        profileData = result.Profile
+                    });
+                }
+                catch (Exception ex)
+                {
+                    RecordLog("Import", $"Error parsing config file: {ex.Message}");
+                    return Results.BadRequest(new { error = $"Failed to parse YAML: {ex.Message}" });
+                }
+            });
+
+            application.MapPost("/api/profiles/import/save", async (ImportSaveRequest request) =>
+            {
+                if (request == null || string.IsNullOrWhiteSpace(request.TargetProfileName))
+                {
+                    return Results.BadRequest(new { error = "Target profile name is required." });
+                }
+
+                if (request.ImportedProfile == null)
+                {
+                    return Results.BadRequest(new { error = "Imported profile data is required." });
+                }
+
+                try
+                {
+                    await profileLock.WaitAsync();
+                    try
+                    {
+                        // Load or create target profile
+                        var targetProfile = profileManager.LoadProfile(request.TargetProfileName);
+                        if (targetProfile == null)
+                        {
+                            targetProfile = profileManager.CreateProfile(request.TargetProfileName);
+                        }
+
+                        // Merge imported data into target profile
+                        MergeImportedProfile(targetProfile, request.ImportedProfile, request.OverwriteMode);
+
+                        // Save updated profile
+                        profileManager.SaveProfile(targetProfile);
+
+                        // Switch to this profile
+                        activeProfile = targetProfile;
+                        ActiveProfileChanged?.Invoke(this, targetProfile);
+
+                        RecordLog("Import", $"Configuration imported successfully into profile '{request.TargetProfileName}'.");
+
+                        return Results.Ok(new
+                        {
+                            success = true,
+                            profileName = targetProfile.Name
+                        });
+                    }
+                    finally
+                    {
+                        profileLock.Release();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    RecordLog("Import", $"Error saving imported config: {ex.Message}");
+                    return Results.BadRequest(new { error = ex.Message });
+                }
+            });
+
             application.MapGet("/api/defaults/collections", () =>
             {
                 return Results.Json(new
@@ -474,6 +579,37 @@ namespace KometaGUIv3.Services
                 return Results.Json(entries);
             });
 
+            application.MapGet("/api/actions/yaml-preview", () =>
+            {
+                RecordLog("Server", "Web request for YAML preview received.");
+
+                if (activeProfile == null)
+                {
+                    RecordLog("Server", "Error: Active profile is null during preview generation.");
+                    return Results.Ok(new { content = "# Error: Active profile not found on server." });
+                }
+
+                try
+                {
+                    RecordLog("Server", $"Generating YAML preview for profile: {activeProfile.Name}");
+                    var yamlContent = yamlGenerator.GenerateKometaConfig(activeProfile);
+
+                    if (string.IsNullOrWhiteSpace(yamlContent))
+                    {
+                        RecordLog("Server", "Warning: YAML generation resulted in empty content.");
+                        return Results.Ok(new { content = "# Warning: Generated YAML content was empty." });
+                    }
+
+                    RecordLog("Server", "YAML preview generated successfully.");
+                    return Results.Ok(new { content = yamlContent });
+                }
+                catch (Exception ex)
+                {
+                    RecordLog("Server", $"Critical Error during YAML preview generation: {ex.Message}");
+                    return Results.Ok(new { content = $"# CRITICAL ERROR: Could not generate YAML preview.\n# See application logs for details.\n# {ex.Message}" });
+                }
+            });
+
             application.MapPost("/api/actions/generate-yaml", (GenerateYamlRequest request) =>
             {
                 if (activeProfile == null)
@@ -488,7 +624,7 @@ namespace KometaGUIv3.Services
                 yamlGenerator.SaveConfigToFile(yamlContent, targetPath);
 
                 RecordLog("Server", $"YAML configuration saved to {targetPath}");
-                return Results.Ok(new { path = targetPath });
+                return Results.Ok(new { path = targetPath, content = yamlContent });
             });
 
             application.MapPost("/api/actions/run-kometa", async (RunKometaRequest request) =>
@@ -584,7 +720,7 @@ namespace KometaGUIv3.Services
                     return Results.NotFound(new { error = "No active profile." });
                 }
 
-                var success = await kometaInstaller.InstallKometaAsync(activeProfile.KometaDirectory, request?.Force ?? false);
+                var success = await kometaInstaller.InstallKometaAsync(activeProfile.KometaDirectory, false);
                 return Results.Ok(new { success });
             });
 
@@ -654,6 +790,65 @@ namespace KometaGUIv3.Services
             }
         }
 
+        private void MergeImportedProfile(KometaProfile target, KometaProfile source, string overwriteMode)
+        {
+            // Always overwrite these core settings
+            target.Plex = source.Plex;
+            target.TMDb = source.TMDb;
+            target.KometaDirectory = source.KometaDirectory ?? target.KometaDirectory;
+            target.SelectedLibraries = source.SelectedLibraries;
+            target.Settings = source.Settings;
+
+            // Collections: merge or replace based on mode
+            if (overwriteMode == "replace")
+            {
+                target.SelectedCharts = source.SelectedCharts;
+                target.CollectionAdvancedSettings = source.CollectionAdvancedSettings ?? new Dictionary<string, CollectionAdvancedConfiguration>();
+            }
+            else // merge
+            {
+                foreach (var chart in source.SelectedCharts)
+                {
+                    target.SelectedCharts[chart.Key] = chart.Value;
+                }
+
+                if (source.CollectionAdvancedSettings != null)
+                {
+                    foreach (var setting in source.CollectionAdvancedSettings)
+                    {
+                        target.CollectionAdvancedSettings[setting.Key] = setting.Value;
+                    }
+                }
+            }
+
+            // Overlays: merge or replace
+            if (overwriteMode == "replace")
+            {
+                target.OverlaySettings = source.OverlaySettings;
+            }
+            else
+            {
+                foreach (var overlay in source.OverlaySettings)
+                {
+                    target.OverlaySettings[overlay.Key] = overlay.Value;
+                }
+            }
+
+            // Optional services: always merge
+            foreach (var service in source.OptionalServices)
+            {
+                target.OptionalServices[service.Key] = service.Value;
+            }
+
+            foreach (var enabled in source.EnabledServices)
+            {
+                target.EnabledServices[enabled.Key] = enabled.Value;
+            }
+
+            // Update timestamp
+            target.LastModified = DateTime.Now;
+        }
+
         private string ResolveYamlTargetPath(string? providedPath)
         {
             if (!string.IsNullOrWhiteSpace(providedPath))
@@ -699,8 +894,9 @@ namespace KometaGUIv3.Services
         private record GenerateYamlRequest(string? TargetPath);
         private record RunKometaRequest(string? ConfigPath);
         private record ScheduleRequest(int Interval, string Frequency, string Time);
-        private record InstallRequest(bool Force);
+        private record InstallRequest();
         private record ManualLogRequest(string? Source, string Message);
+        private record ImportSaveRequest(string TargetProfileName, KometaProfile ImportedProfile, string OverwriteMode);
     }
 
     public record LocalServerLogEntry(DateTime Timestamp, string Source, string Message);

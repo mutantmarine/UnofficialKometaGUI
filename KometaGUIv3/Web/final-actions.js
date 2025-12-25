@@ -12,12 +12,15 @@
     renderMissingProfile,
   } = window.app;
 
-  await Promise.all([loadActiveProfile(), refreshStatus()]);
+  await loadActiveProfile();
+  await refreshStatus();
 
   if (!state.profile) {
     renderMissingProfile('final-root');
     return;
   }
+
+  await refreshYamlPreview();
 
   let lastTicks = 0;
   bindEvents();
@@ -26,16 +29,27 @@
   const timer = setInterval(pollLogs, 4000);
   window.addEventListener('beforeunload', () => clearInterval(timer));
 
+  async function refreshYamlPreview() {
+    try {
+      const result = await api.get('/api/actions/yaml-preview');
+      const preview = document.getElementById('yaml-preview');
+      if (preview && result?.content) {
+        preview.value = result.content;
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
   function bindEvents() {
     handleClick('generate-yaml', async () => {
-      const path = document.getElementById('yaml-target').value.trim();
-      const result = await api.post('/api/actions/generate-yaml', path ? { targetPath: path } : {});
+      const result = await api.post('/api/actions/generate-yaml', {});
       showToast(`YAML saved to ${result?.path || 'configured directory'}`, 'success');
+      await refreshYamlPreview(); // Refresh preview after saving
     });
 
     handleClick('run-kometa', async () => {
-      const path = document.getElementById('config-path').value.trim();
-      await api.post('/api/actions/run-kometa', path ? { configPath: path } : {});
+      await api.post('/api/actions/run-kometa', {});
       showToast('Kometa run started.', 'success');
     });
 
@@ -66,8 +80,7 @@
     });
 
     handleClick('install-kometa', async () => {
-      const force = document.getElementById('force-install')?.checked || false;
-      await api.post('/api/actions/install-kometa', { force });
+      await api.post('/api/actions/install-kometa', {});
       showToast('Installation started.', 'success');
       await refreshSummary();
     });

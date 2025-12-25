@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kometa GUI – Profile Management</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script defer src="app.js"></script>
-    <script defer src="profile.js"></script>
+    <link rel="stylesheet" href="styles.css?v=2" />
+    <script defer src="app.js?v=2"></script>
+    <script defer src="profile.js?v=2"></script>
   </head>
   <body data-page="profile">
     <main>
@@ -32,6 +32,71 @@
       <section class="card">
         <h2>Active Profile Summary</h2>
         <div id="profile-summary"></div>
+      </section>
+
+      <section class="card">
+        <h2>Import Existing Configuration</h2>
+        <p class="description">Import a config.yml file from an existing Kometa setup. The configuration will be parsed, validated, and you can preview before saving to a profile.</p>
+
+        <div class="import-workflow">
+          <!-- Step 1: File Selection -->
+          <div class="import-step">
+            <h3>Step 1: Select Config File</h3>
+            <input type="file" id="config-file-input" accept=".yml,.yaml" />
+            <button id="parse-config-btn" class="mt-1" disabled>Parse & Preview</button>
+          </div>
+
+          <!-- Step 2: Preview (hidden initially) -->
+          <div id="preview-section" class="import-step mt-2" style="display: none;">
+            <h3>Step 2: Preview Imported Configuration</h3>
+
+            <div id="preview-warnings" class="warnings-container"></div>
+
+            <div class="grid two mt-1">
+              <div class="card">
+                <h4>Services</h4>
+                <div id="preview-services"></div>
+              </div>
+              <div class="card">
+                <h4>Libraries</h4>
+                <div id="preview-libraries"></div>
+              </div>
+              <div class="card">
+                <h4>Collections</h4>
+                <div id="preview-collections"></div>
+              </div>
+              <div class="card">
+                <h4>Overlays</h4>
+                <div id="preview-overlays"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Save Options (hidden initially) -->
+          <div id="save-section" class="import-step mt-2" style="display: none;">
+            <h3>Step 3: Save to Profile</h3>
+
+            <label>
+              Target Profile
+              <select id="import-target-profile">
+                <option value="">-- Select Profile --</option>
+              </select>
+            </label>
+
+            <label class="mt-1">
+              Import Mode
+              <select id="import-mode">
+                <option value="replace">Replace All (Overwrite existing settings)</option>
+                <option value="merge">Merge (Keep existing, add new)</option>
+              </select>
+            </label>
+
+            <div class="flex-row mt-1">
+              <button id="confirm-import-btn" class="primary" disabled>Import Configuration</button>
+              <button id="cancel-import-btn" class="secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   </body>

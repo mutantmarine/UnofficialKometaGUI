@@ -16,72 +16,56 @@
       </section>
 
       <section class="card">
-        <h2>Generate YAML</h2>
-        <div class="form-grid">
-          <label>
-            Target Path (optional)
-            <input id="yaml-target" type="text" placeholder="Leave blank to use the Kometa config folder" />
-          </label>
-          <div class="flex-row mt-1">
-            <button id="generate-yaml">Generate YAML</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Run Kometa</h2>
-        <div class="form-grid">
-          <label>
-            Config Path (optional)
-            <input id="config-path" type="text" placeholder="Use last generated config by default" />
-          </label>
-          <div class="flex-row mt-1">
-            <button id="run-kometa">Run Kometa</button>
-            <button class="secondary" id="stop-kometa">Stop</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Scheduling</h2>
-        <div class="form-grid">
-          <label>
-            Interval
-            <input id="schedule-interval" type="number" min="1" value="1" />
-          </label>
-          <label>
-            Frequency
-            <select id="schedule-frequency">
-              <option value="Daily">Daily</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-            </select>
-          </label>
-          <label>
-            Time (HH:MM)
-            <input id="schedule-time" type="time" value="02:00" />
-          </label>
-          <div class="flex-row mt-1">
-            <button id="create-schedule">Create Schedule</button>
-            <button class="secondary" id="remove-schedule">Remove Schedule</button>
-            <span id="schedule-status" class="badge">No scheduled task</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
         <h2>Installation</h2>
         <div class="flex-row">
           <button id="check-install" class="secondary">Check Installation</button>
           <button id="install-kometa">Install / Repair</button>
-          <label class="flex-row" style="align-items:center;">
-            <input id="force-install" type="checkbox" /> Force reinstall
-          </label>
           <button id="update-kometa">Update Kometa</button>
           <span id="install-status" class="badge">Unknown</span>
         </div>
         <div id="install-summary" class="mt-2"></div>
       </section>
+
+      <div class="layout-grid">
+        <section class="card">
+          <h2>Actions</h2>
+          <div class="action-group">
+            <h3>YAML</h3>
+            <button id="generate-yaml">Generate & Save YAML</button>
+          </div>
+          <div class="action-group">
+            <h3>Execution</h3>
+            <button id="run-kometa">Run Kometa</button>
+            <button class="secondary" id="stop-kometa">Stop</button>
+          </div>
+          <div class="action-group">
+            <h3>Scheduling</h3>
+            <div class="form-grid scheduling">
+              <label>Interval <input id="schedule-interval" type="number" min="1" value="1" /></label>
+              <label>Frequency 
+                <select id="schedule-frequency">
+                  <option value="Daily">Daily</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Monthly">Monthly</option>
+                </select>
+              </label>
+              <label>Time (HH:MM) <input id="schedule-time" type="time" value="02:00" /></label>
+            </div>
+            <div class="flex-row mt-1">
+              <button id="create-schedule">Create Schedule</button>
+              <button class="secondary" id="remove-schedule">Remove</button>
+              <span id="schedule-status" class="badge">No scheduled task</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Configuration Preview</h2>
+          <div id="yaml-preview-container">
+            <textarea id="yaml-preview" readonly placeholder="Loading configuration preview..."></textarea>
+          </div>
+        </section>
+      </div>
 
       <section class="card">
         <h2>Logs</h2>

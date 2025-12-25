@@ -731,7 +731,7 @@ namespace KometaGUIv3.Forms
             SafeUpdateUI(() =>
             {
                 UpdateScheduleStatus();
-                GenerateConfigPreview();
+                GenerateConfigPreview(); // This will now also update the web cache
             });
             ProfileChanged?.Invoke(this, profile);
         }
