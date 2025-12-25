@@ -109,7 +109,6 @@ User data is stored locally in:
 **Plex Authentication Fails**
 - Verify Plex credentials and server accessibility
 - Check that Plex Media Server is running
-- Verify you have Two Factor Authentication disabled on your Plex server
 
 **Kometa Directory Not Found**
 - Ensure you point to the folder containing `kometa.py`
